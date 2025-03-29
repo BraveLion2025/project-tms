@@ -1,0 +1,181 @@
+/**
+ * Custom CSS for Project-TMS
+ */
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* Apply animations */
+.task-card {
+    animation: slideIn 0.3s ease-out;
+}
+
+.modal-content {
+    animation: fadeIn 0.2s ease-out;
+}
+
+/* Task status indicators */
+.status-todo {
+    border-left: 4px solid #9ca3af;
+}
+
+.status-in-progress {
+    border-left: 4px solid #9333ea;
+}
+
+.status-review {
+    border-left: 4px solid #3b82f6;
+}
+
+.status-done {
+    border-left: 4px solid #10b981;
+}
+
+/* Priority indicators */
+.priority-low {
+    background-color: #6b7280;
+}
+
+.priority-medium {
+    background-color: #f59e0b;
+}
+
+.priority-high {
+    background-color: #ef4444;
+}
+
+/* Dragging styles */
+.dragging {
+    opacity: 0.5;
+    border: 2px dashed #4f46e5;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #2a2a2a;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #4a4a4a;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #606060;
+}
+
+/* Modal transitions */
+.modal {
+    transition: opacity 0.2s ease-in-out;
+}
+
+/* Due date formatting */
+.due-soon {
+    color: #f59e0b;
+}
+
+.overdue {
+    color: #ef4444;
+}
+
+/* Task notes section */
+.task-note {
+    transition: background-color 0.2s ease;
+}
+
+.task-note:hover {
+    background-color: #374151;
+}
+
+/* Project card */
+.project-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.project-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Dashboard stats */
+.stat-card {
+    transition: transform 0.2s ease;
+}
+
+.stat-card:hover {
+    transform: scale(1.02);
+}
+
+/* Button hover effects */
+.btn-hover-lift {
+    transition: transform 0.2s ease;
+}
+
+.btn-hover-lift:hover {
+    transform: translateY(-1px);
+}
+
+/* Progress bars */
+.progress-bar {
+    transition: width 0.5s ease-in-out;
+    height: 6px;
+    border-radius: 3px;
+}
+
+.progress-todo {
+    background-color: #9ca3af;
+}
+
+.progress-in-progress {
+    background-color: #9333ea;
+}
+
+.progress-review {
+    background-color: #3b82f6;
+}
+
+.progress-done {
+    background-color: #10b981;
+}
+
+/* Custom checkbox styling */
+.custom-checkbox {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #6b7280;
+    border-radius: 4px;
+    background-color: transparent;
+    display: inline-block;
+    position: relative;
+    margin-right: 8px;
+    vertical-align: middle;
+    cursor: pointer;
+}
+
+.custom-checkbox:checked {
+    background-color: #8b5cf6;
+    border-color: #8b5cf6;
+}
+
+.custom-checkbox:checked::after {
+    content: '✓';
+    font-size: 12px;
+    color: white;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}

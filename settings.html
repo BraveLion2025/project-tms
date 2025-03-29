@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - Project-TMS</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Custom styles -->
+    <link rel="stylesheet" href="css/themes.css">
+</head>
+<body class="theme-light">
+    <!-- Header -->
+    <header class="bg-gray-800 border-b border-gray-700 py-4 px-6">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-purple-400">Project-TMS</h1>
+            <nav class="flex space-x-4">
+                <a href="index.html" class="text-gray-300 hover:text-white">Dashboard</a>
+                <a href="analytics.html" class="text-gray-300 hover:text-white">Analytics</a>
+                <a href="settings.html" class="text-white">Settings</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto py-6 px-4">
+        <div class="max-w-4xl mx-auto">
+            <h2 class="text-2xl font-bold mb-6">Settings</h2>
+            
+            <!-- Theme Settings -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
+                <h3 class="text-xl font-semibold mb-4">Theme Settings</h3>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Theme Selection
+                        </label>
+                        <div class="grid grid-cols-3 gap-4">
+                            <button class="theme-option p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-purple-500 transition-colors" data-theme="light">
+                                <div class="w-full h-32 bg-white dark:bg-gray-900 rounded mb-2"></div>
+                                <span class="text-sm font-medium">Light Theme</span>
+                            </button>
+                            <button class="theme-option p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-purple-500 transition-colors" data-theme="dark">
+                                <div class="w-full h-32 bg-gray-900 rounded mb-2"></div>
+                                <span class="text-sm font-medium">Dark Theme</span>
+                            </button>
+                            <button class="theme-option p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-purple-500 transition-colors" data-theme="digital-void">
+                                <div class="w-full h-32 bg-gradient-to-br from-gray-900 to-blue-900 rounded mb-2"></div>
+                                <span class="text-sm font-medium">Digital Void</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Custom Theme Colors
+                        </label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Primary Color</label>
+                                <input type="color" class="color-picker-input w-full h-10 rounded cursor-pointer" data-var="--accent-primary" value="#3b82f6">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Secondary Color</label>
+                                <input type="color" class="color-picker-input w-full h-10 rounded cursor-pointer" data-var="--accent-secondary" value="#60a5fa">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Theme Export/Import
+                        </label>
+                        <div class="flex space-x-4">
+                            <button id="exportThemeBtn" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md">
+                                Export Theme
+                            </button>
+                            <button id="importThemeBtn" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md">
+                                Import Theme
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notification Settings -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
+                <h3 class="text-xl font-semibold mb-4">Notification Settings</h3>
+                
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-medium">Email Notifications</h4>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Receive updates about your projects via email</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" class="sr-only peer" id="emailNotifications" checked>
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                        </label>
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-medium">Browser Notifications</h4>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Get notified in your browser about task updates</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" class="sr-only peer" id="browserNotifications">
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Save Button -->
+            <div class="flex justify-end">
+                <button id="saveSettingsBtn" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md">
+                    Save Changes
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Theme Manager Script -->
+    <script src="js/themeManager.js"></script>
+    <script>
+        // Initialize settings when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load saved settings
+            const settings = JSON.parse(localStorage.getItem('settings') || '{}');
+            
+            // Set theme options
+            const themeOptions = document.querySelectorAll('.theme-option');
+            themeOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    const theme = option.dataset.theme;
+                    window.themeManager.applyTheme(theme);
+                    themeOptions.forEach(opt => opt.classList.remove('border-purple-500'));
+                    option.classList.add('border-purple-500');
+                });
+            });
+
+            // Set notification toggles
+            document.getElementById('emailNotifications').checked = settings.emailNotifications !== false;
+            document.getElementById('browserNotifications').checked = settings.browserNotifications || false;
+
+            // Color picker functionality
+            const colorPickers = document.querySelectorAll('.color-picker-input');
+            colorPickers.forEach(picker => {
+                picker.addEventListener('input', (e) => {
+                    const variable = e.target.dataset.var;
+                    document.documentElement.style.setProperty(variable, e.target.value);
+                });
+            });
+
+            // Export theme functionality
+            document.getElementById('exportThemeBtn').addEventListener('click', () => {
+                const theme = {
+                    name: window.themeManager.currentTheme,
+                    colors: {
+                        primary: getComputedStyle(document.documentElement).getPropertyValue('--accent-primary').trim(),
+                        secondary: getComputedStyle(document.documentElement).getPropertyValue('--accent-secondary').trim()
+                    }
+                };
+                
+                const blob = new Blob([JSON.stringify(theme, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'theme.json';
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+
+            // Import theme functionality
+            document.getElementById('importThemeBtn').addEventListener('click', () => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.json';
+                input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        try {
+                            const theme = JSON.parse(event.target.result);
+                            window.themeManager.applyTheme(theme.name);
+                            document.documentElement.style.setProperty('--accent-primary', theme.colors.primary);
+                            document.documentElement.style.setProperty('--accent-secondary', theme.colors.secondary);
+                            updateColorPickers();
+                        } catch (error) {
+                            alert('Invalid theme file');
+                        }
+                    };
+                    reader.readAsText(file);
+                };
+                input.click();
+            });
+
+            // Save settings functionality
+            document.getElementById('saveSettingsBtn').addEventListener('click', () => {
+                const settings = {
+                    emailNotifications: document.getElementById('emailNotifications').checked,
+                    browserNotifications: document.getElementById('browserNotifications').checked,
+                    theme: window.themeManager.currentTheme,
+                    colors: {
+                        primary: getComputedStyle(document.documentElement).getPropertyValue('--accent-primary').trim(),
+                        secondary: getComputedStyle(document.documentElement).getPropertyValue('--accent-secondary').trim()
+                    }
+                };
+                localStorage.setItem('settings', JSON.stringify(settings));
+                alert('Settings saved successfully!');
+            });
+
+            // Helper function to update color pickers
+            function updateColorPickers() {
+                colorPickers.forEach(picker => {
+                    const variable = picker.dataset.var;
+                    const value = getComputedStyle(document.documentElement).getPropertyValue(variable).trim();
+                    picker.value = value;
+                });
+            }
+        });
+    </script>
+</body>
+</html> 

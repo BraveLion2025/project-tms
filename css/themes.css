@@ -1,0 +1,197 @@
+/* Theme Variables */
+:root {
+    /* Base theme variables */
+    --bg-primary: #ffffff;
+    --bg-secondary: #f3f4f6;
+    --text-primary: #1f2937;
+    --text-secondary: #4b5563;
+    --accent-primary: #3b82f6;
+    --accent-secondary: #60a5fa;
+    --border-color: #e5e7eb;
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --danger-color: #ef4444;
+}
+
+/* Digital Void Theme */
+.theme-digital-void {
+    --bg-primary: #0a0f1a;
+    --bg-secondary: #141e2c;
+    --text-primary: #00ff95;
+    --text-secondary: #00cc88;
+    --accent-primary: #6366f1;
+    --accent-secondary: #00ffbb;
+    --border-color: #1e293b;
+    --success-color: #00ff88;
+    --warning-color: #ffcc00;
+    --danger-color: #ff3366;
+    background: radial-gradient(circle at 50% 50%, #141e2c 0%, #0a0f1a 100%);
+}
+
+/* Dark Theme */
+.theme-dark {
+    --bg-primary: #1f2937;
+    --bg-secondary: #111827;
+    --text-primary: #f9fafb;
+    --text-secondary: #e5e7eb;
+    --accent-primary: #60a5fa;
+    --accent-secondary: #93c5fd;
+    --border-color: #374151;
+    --success-color: #34d399;
+    --warning-color: #fbbf24;
+    --danger-color: #f87171;
+}
+
+/* Light Theme */
+.theme-light {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f3f4f6;
+    --text-primary: #1f2937;
+    --text-secondary: #4b5563;
+    --accent-primary: #3b82f6;
+    --accent-secondary: #60a5fa;
+    --border-color: #e5e7eb;
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --danger-color: #ef4444;
+}
+
+/* Theme-specific styles */
+.theme-digital-void .card {
+    background: linear-gradient(135deg, rgba(20, 30, 44, 0.7) 0%, rgba(10, 15, 26, 0.7) 100%);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    box-shadow: 0 0 15px rgba(0, 255, 149, 0.1),
+                inset 0 0 20px rgba(99, 102, 241, 0.05);
+    transition: all 0.3s ease;
+}
+
+.theme-digital-void .card:hover {
+    border-color: rgba(99, 102, 241, 0.4);
+    box-shadow: 0 0 20px rgba(0, 255, 149, 0.2),
+                inset 0 0 30px rgba(99, 102, 241, 0.1);
+    transform: translateY(-2px);
+}
+
+.theme-digital-void .bg-secondary {
+    background: linear-gradient(135deg, rgba(20, 30, 44, 0.8) 0%, rgba(10, 15, 26, 0.8) 100%);
+    backdrop-filter: blur(5px);
+}
+
+.theme-digital-void .menu-item:hover {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(0, 255, 149, 0.1) 100%);
+    border-color: rgba(99, 102, 241, 0.3);
+}
+
+/* Theme transition */
+body {
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Theme-specific button styles */
+.theme-digital-void button {
+    background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+    border: none;
+    color: var(--bg-primary);
+    transition: all 0.3s ease;
+}
+
+.theme-digital-void button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 15px rgba(0, 255, 149, 0.3);
+}
+
+/* Theme-specific input styles */
+.theme-digital-void input,
+.theme-digital-void select,
+.theme-digital-void textarea {
+    background: rgba(20, 30, 44, 0.7);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    color: var(--text-primary);
+    backdrop-filter: blur(5px);
+}
+
+.theme-digital-void input:focus,
+.theme-digital-void select:focus,
+.theme-digital-void textarea:focus {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 10px rgba(0, 255, 149, 0.2);
+}
+
+/* Theme-specific scrollbar */
+.theme-digital-void ::-webkit-scrollbar {
+    width: 8px;
+}
+
+.theme-digital-void ::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+}
+
+.theme-digital-void ::-webkit-scrollbar-thumb {
+    background: var(--accent-primary);
+    border-radius: 4px;
+}
+
+.theme-digital-void ::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-secondary);
+}
+
+/* Digital Void specific header styles */
+.theme-digital-void header {
+    background: linear-gradient(135deg, rgba(20, 30, 44, 0.9) 0%, rgba(10, 15, 26, 0.9) 100%);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+/* Digital Void specific table styles */
+.theme-digital-void table {
+    background: rgba(20, 30, 44, 0.7);
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.theme-digital-void th {
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--text-primary);
+}
+
+.theme-digital-void td {
+    border-color: rgba(99, 102, 241, 0.1);
+}
+
+/* Digital Void specific modal styles */
+.theme-digital-void .modal {
+    background: linear-gradient(135deg, rgba(20, 30, 44, 0.95) 0%, rgba(10, 15, 26, 0.95) 100%);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+/* Digital Void specific chart styles */
+.theme-digital-void canvas {
+    filter: drop-shadow(0 0 10px rgba(0, 255, 149, 0.2));
+}
+
+/* Digital Void specific status indicators */
+.theme-digital-void .status-indicator {
+    box-shadow: 0 0 10px rgba(0, 255, 149, 0.3);
+}
+
+/* Digital Void specific progress bars */
+.theme-digital-void .progress-bar {
+    background: linear-gradient(90deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+    box-shadow: 0 0 10px rgba(0, 255, 149, 0.3);
+}
+
+/* Digital Void specific task cards */
+.theme-digital-void .task-card {
+    background: linear-gradient(135deg, rgba(20, 30, 44, 0.7) 0%, rgba(10, 15, 26, 0.7) 100%);
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    box-shadow: 0 0 15px rgba(0, 255, 149, 0.1);
+}
+
+.theme-digital-void .task-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 20px rgba(0, 255, 149, 0.2);
+    border-color: rgba(99, 102, 241, 0.4);
+} 
