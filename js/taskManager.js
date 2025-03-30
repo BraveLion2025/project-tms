@@ -73,94 +73,227 @@ class TaskManager {
     }
 
     createTaskElement(task) {
-        const div = document.createElement('div');
-        div.className = 'task-card bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 mb-4';
-        div.dataset.taskId = task.id;
-
-        const statusColors = {
-            todo: 'bg-gray-500',
-            'in-progress': 'bg-blue-500',
-            review: 'bg-yellow-500',
-            done: 'bg-green-500'
-        };
-
-        const priorityColors = {
-            low: 'text-green-500',
-            medium: 'text-yellow-500',
-            high: 'text-red-500'
-        };
-
-        div.innerHTML = `
-            <div class="flex justify-between items-start mb-2">
-                <h3 class="text-lg font-semibold">${task.title}</h3>
-                <div class="flex items-center space-x-2">
-                    <span class="status-indicator ${statusColors[task.status]} w-2 h-2 rounded-full"></span>
-                    <span class="text-sm ${priorityColors[task.priority]}">${task.priority}</span>
+        const taskEl = document.createElement('div');
+        taskEl.className = `task-card status-${task.status} glass-effect rounded-lg p-4 mb-3 cursor-pointer transition-all duration-300 hover:translate-y-[-4px]`;
+        taskEl.draggable = true;
+        taskEl.dataset.taskId = task.id;
+        
+        // Priority classes
+        let priorityColor = 'bg-gray-400 text-white';
+        let priorityText = 'Low';
+        
+        if (task.priority === 'high') {
+            priorityColor = 'bg-danger-color text-white';
+            priorityText = 'High';
+        } else if (task.priority === 'medium') {
+            priorityColor = 'bg-warning-color text-white';
+            priorityText = 'Medium';
+        }
+        
+        // Calculate time spent
+        const timeSpent = this.calculateTimeSpent(task);
+        const timeSpentDisplay = this.formatTimeSpent(timeSpent);
+        
+        // Is task overdue?
+        let dueDateClass = '';
+        let dueDateIcon = '';
+        if (task.dueDate) {
+            const today = new Date();
+            const dueDate = new Date(task.dueDate);
+            
+            if (task.status !== 'done' && dueDate < today) {
+                dueDateClass = 'text-danger-color';
+                dueDateIcon = '<i class="fas fa-exclamation-circle mr-1"></i>';
+            } else if (task.status !== 'done' && 
+                      dueDate.getTime() - today.getTime() < 2 * 24 * 60 * 60 * 1000) { // 2 days
+                dueDateClass = 'text-warning-color';
+                dueDateIcon = '<i class="fas fa-clock mr-1"></i>';
+            }
+        }
+        
+        // Create time tracking button for in-progress tasks
+        let timeTrackingButton = '';
+        if (task.status === 'in-progress') {
+            const isActive = task.timeTracking && task.timeTracking.isActive;
+            const buttonClasses = isActive 
+                ? 'bg-danger-color hover:bg-red-700' 
+                : 'bg-success-color hover:bg-green-700';
+            const buttonIcon = isActive 
+                ? '<i class="fas fa-pause mr-1"></i>' 
+                : '<i class="fas fa-play mr-1"></i>';
+            const buttonText = isActive ? 'Pause' : 'Start';
+            
+            timeTrackingButton = `
+                <button class="time-tracker-btn flex items-center text-white text-xs px-3 py-1 rounded ${buttonClasses} mt-2 transition-all duration-200" data-task-id="${task.id}">
+                    ${buttonIcon}
+                    ${buttonText}
+                </button>
+            `;
+        }
+        
+        // Completion information for done tasks
+        let completionInfo = '';
+        if (task.status === 'done' && task.completedAt) {
+            const completedDate = new Date(task.completedAt);
+            const formattedDate = completedDate.toLocaleDateString();
+            
+            if (task.startedAt) {
+                const startedDate = new Date(task.startedAt);
+                const diffTime = Math.abs(completedDate - startedDate);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                
+                completionInfo = `
+                    <div class="flex items-center text-xs text-success-color mt-2">
+                        <i class="fas fa-check-circle mr-1"></i>
+                        Completed in ${diffDays} day${diffDays !== 1 ? 's' : ''} (${timeSpentDisplay} active)
+                    </div>
+                `;
+            } else {
+                completionInfo = `
+                    <div class="flex items-center text-xs text-success-color mt-2">
+                        <i class="fas fa-check-circle mr-1"></i>
+                        Completed on ${formattedDate}
+                    </div>
+                `;
+            }
+        }
+        
+        // Create subtasks indicator if any
+        let subtasksIndicator = '';
+        if (task.subtasks && task.subtasks.length > 0) {
+            const completedSubtasks = task.subtasks.filter(subtask => subtask.completed).length;
+            subtasksIndicator = `
+                <div class="flex items-center text-xs mt-2 text-text-secondary">
+                    <i class="fas fa-tasks mr-1"></i>
+                    ${completedSubtasks}/${task.subtasks.length} subtasks
                 </div>
-            </div>
-            <p class="text-gray-600 dark:text-gray-300 mb-2">${task.description}</p>
-            <div class="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
-                <div class="flex items-center space-x-4">
-                    <span>Due: ${new Date(task.dueDate).toLocaleDateString()}</span>
-                    <span>Time: ${this.formatTime(task.timeSpent)} / ${this.formatTime(task.estimatedTime)}</span>
+            `;
+        }
+        
+        // Create tags display if any
+        let tagsDisplay = '';
+        if (task.tags && task.tags.length > 0) {
+            tagsDisplay = `
+                <div class="flex flex-wrap gap-1 mt-2">
+                    ${task.tags.map(tag => `
+                        <span class="bg-bg-secondary text-text-secondary text-xs px-2 py-0.5 rounded">
+                            ${tag}
+                        </span>
+                    `).join('')}
                 </div>
-                <div class="flex items-center space-x-2">
-                    <button class="edit-task-btn text-blue-500 hover:text-blue-700">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="delete-task-btn text-red-500 hover:text-red-700">
-                        <i class="fas fa-trash"></i>
-                    </button>
+            `;
+        }
+        
+        // Create the task card content with enhanced styling
+        taskEl.innerHTML = `
+            <div class="relative">
+                <h4 class="font-medium text-text-primary mb-2 pr-6">${task.title}</h4>
+                
+                <span class="absolute top-0 right-0 px-2 py-0.5 rounded-full text-xs ${priorityColor}">
+                    ${priorityText}
+                </span>
+                
+                <p class="text-sm text-text-secondary mb-3 line-clamp-2">${task.description || 'No description'}</p>
+                
+                <div class="flex justify-between items-center">
+                    ${task.dueDate ? `
+                        <span class="text-xs ${dueDateClass} flex items-center">
+                            ${dueDateIcon}
+                            Due: ${new Date(task.dueDate).toLocaleDateString()}
+                        </span>
+                    ` : '<span></span>'}
+                    
+                    ${task.assignee ? `
+                        <span class="text-xs flex items-center">
+                            <i class="fas fa-user mr-1"></i>
+                            ${task.assignee}
+                        </span>
+                    ` : '<span></span>'}
                 </div>
-            </div>
-            <div class="mt-4">
-                <div class="task-attachments flex flex-wrap gap-2 mb-2">
-                    ${this.renderAttachments(task.attachments)}
-                </div>
-                <div class="task-notes space-y-2">
-                    ${this.renderNotes(task.id)}
-                </div>
+                
+                ${task.timeTracking && task.timeTracking.totalTime > 0 ? `
+                    <div class="flex items-center text-xs mt-2 text-text-secondary">
+                        <i class="fas fa-clock mr-1"></i>
+                        ${this.formatTimeSpent(task.timeTracking.totalTime || 0)}
+                    </div>
+                ` : ''}
+                
+                ${subtasksIndicator}
+                ${tagsDisplay}
+                ${completionInfo}
+                ${timeTrackingButton}
             </div>
         `;
-
-        // Add event listeners
-        div.querySelector('.edit-task-btn').addEventListener('click', () => this.editTask(task));
-        div.querySelector('.delete-task-btn').addEventListener('click', () => this.deleteTask(task.id));
-
-        return div;
+        
+        // Setup drag events
+        taskEl.addEventListener('dragstart', () => {
+            taskEl.classList.add('dragging', 'opacity-50', 'border-2', 'border-dashed', 'border-accent-primary');
+        });
+        
+        taskEl.addEventListener('dragend', () => {
+            taskEl.classList.remove('dragging', 'opacity-50', 'border-2', 'border-dashed', 'border-accent-primary');
+            
+            // Get parent container to determine new status
+            const container = taskEl.parentElement;
+            if (!container) return;
+            
+            let newStatus = 'todo';
+            if (container.id === 'inProgressTasks') {
+                newStatus = 'in-progress';
+            } else if (container.id === 'reviewTasks') {
+                newStatus = 'review';
+            } else if (container.id === 'doneTasks') {
+                newStatus = 'done';
+            }
+            
+            // Update task status if changed
+            if (task.status !== newStatus) {
+                this.updateTaskStatus(task.id, newStatus);
+            }
+        });
+        
+        // Open task view on click (but not when clicking timer button)
+        taskEl.addEventListener('click', (e) => {
+            if (e.target.closest('.time-tracker-btn')) {
+                return; // Don't open task view when clicking timer button
+            }
+            this.openViewTaskModal(task.id);
+        });
+        
+        // Add event listener for time tracking button
+        const timerBtn = taskEl.querySelector('.time-tracker-btn');
+        if (timerBtn) {
+            timerBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent card click event
+                this.toggleTimeTracking(task.id);
+            });
+        }
+        
+        return taskEl;
     }
 
-    renderAttachments(attachments) {
-        return attachments.map(file => `
-            <div class="attachment-item flex items-center space-x-2 bg-gray-100 dark:bg-gray-700 rounded px-2 py-1">
-                <i class="fas fa-paperclip"></i>
-                <span class="text-sm">${file.name}</span>
-                <button class="delete-attachment-btn text-red-500 hover:text-red-700" data-file-id="${file.id}">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-        `).join('');
+    calculateTimeSpent(task) {
+        if (!task.timeTracking) return 0;
+        
+        let totalTime = task.timeTracking.totalTime || 0;
+        
+        // Add active time if timer is running
+        if (task.timeTracking.isActive && task.timeTracking.lastStarted) {
+            const now = new Date();
+            const lastStarted = new Date(task.timeTracking.lastStarted);
+            totalTime += (now - lastStarted);
+        }
+        
+        return totalTime;
     }
 
-    renderNotes(taskId) {
-        const notes = StorageManager.getTaskNotes()[taskId] || [];
-        return notes.map(note => `
-            <div class="note-item bg-gray-50 dark:bg-gray-700 rounded p-2">
-                <p class="text-sm">${note.content}</p>
-                <div class="flex justify-between items-center mt-1">
-                    <span class="text-xs text-gray-500">${new Date(note.createdAt).toLocaleString()}</span>
-                    <button class="delete-note-btn text-red-500 hover:text-red-700" data-note-id="${note.id}">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    formatTime(minutes) {
-        const hours = Math.floor(minutes / 60);
-        const mins = minutes % 60;
-        return `${hours}h ${mins}m`;
+    formatTimeSpent(timeInMs) {
+        if (!timeInMs) return "0h 0m";
+        
+        const hours = Math.floor(timeInMs / (1000 * 60 * 60));
+        const minutes = Math.floor((timeInMs % (1000 * 60 * 60)) / (1000 * 60));
+        
+        return `${hours}h ${minutes}m`;
     }
 
     openTaskModal(task = null) {
@@ -262,6 +395,22 @@ class TaskManager {
             this.tasks = StorageManager.getTasks();
             this.updateTaskList();
         }
+    }
+
+    updateTaskStatus(taskId, newStatus) {
+        StorageManager.updateTask(taskId, { status: newStatus });
+        this.tasks = StorageManager.getTasks();
+        this.updateTaskList();
+    }
+
+    toggleTimeTracking(taskId) {
+        StorageManager.toggleTimeTracking(taskId);
+        this.tasks = StorageManager.getTasks();
+        this.updateTaskList();
+    }
+
+    openViewTaskModal(taskId) {
+        // Implementation of openViewTaskModal method
     }
 }
 
