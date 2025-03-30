@@ -11,6 +11,7 @@ const TimeTracker = {
      */
     init: function() {
         this.startTimerUpdates();
+        this.setupBeforeUnload();
     },
     
     /**
@@ -31,35 +32,42 @@ const TimeTracker = {
                 const taskElements = document.querySelectorAll(`.task-card[data-task-id="${activeTask.id}"]`);
                 taskElements.forEach(taskEl => {
                     const timeDisplay = taskEl.querySelector('.task-time-display');
-                    if (timeDisplay) {
+                    if (timeDisplay && TasksManager) {
                         const timeSpent = TasksManager.calculateTimeSpent(activeTask);
                         timeDisplay.textContent = `Time: ${TasksManager.formatTimeSpent(timeSpent)}`;
                     }
                 });
                 
                 // Update project metrics if needed
-                if (ProjectsManager.currentProject) {
+                if (window.ProjectsManager && ProjectsManager.currentProject) {
                     ProjectsManager.updateProjectMetrics(ProjectsManager.currentProject.id);
                 }
                 
                 // Update view task modal if open and showing the active task
-                if (TasksManager.currentTask && TasksManager.currentTask.id === activeTask.id) {
+                if (window.TasksManager && TasksManager.currentTask && TasksManager.currentTask.id === activeTask.id) {
                     const timeInfoEl = document.getElementById('viewTaskTimeInfo');
                     if (timeInfoEl) {
-                        const totalTime = TasksManager.calculateTimeSpent(activeTask);
-                        const timeSpentText = TasksManager.formatTimeSpent(totalTime);
-                        
-                        // Update the time spent text without reloading the entire modal
                         const timeSpentEl = timeInfoEl.querySelector('.time-spent-value');
-                        if (timeSpentEl) {
-                            timeSpentEl.textContent = timeSpentText;
-                        } else {
+                        if (timeSpentEl && TasksManager) {
+                            const totalTime = TasksManager.calculateTimeSpent(activeTask);
+                            const timeSpentText = TasksManager.formatTimeSpent(totalTime);
+                            timeSpentEl.textContent = `Time spent: ${timeSpentText}`;
+                        } else if (TasksManager) {
                             TasksManager.updateTaskTimeInfo(activeTask);
                         }
                     }
                 }
             }
         }, 1000);
+    },
+    
+    /**
+     * Setup event handler for page unload to pause timers
+     */
+    setupBeforeUnload: function() {
+        window.addEventListener('beforeunload', () => {
+            this.handleUnload();
+        });
     },
     
     /**
@@ -93,8 +101,3 @@ const TimeTracker = {
         }
     }
 };
-
-// Set up event listener for page unload
-window.addEventListener('beforeunload', () => {
-    TimeTracker.handleUnload();
-});

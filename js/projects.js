@@ -18,63 +18,82 @@ const ProjectsManager = {
      * Set up event listeners for project-related actions
      */
     setupEventListeners: function() {
-        // New project button
-        document.getElementById('newProjectBtn').addEventListener('click', () => {
-            this.openProjectModal();
-        });
+        // Project selection change
+        const projectSelect = document.getElementById('projectSelect');
+        if (projectSelect) {
+            projectSelect.addEventListener('change', (e) => {
+                const projectId = e.target.value;
+                if (projectId) {
+                    this.selectProject(projectId);
+                } else {
+                    this.clearProjectDisplay();
+                }
+            });
+        }
         
-        // Create first project button (on empty state)
-        document.getElementById('createFirstProjectBtn').addEventListener('click', () => {
-            this.openProjectModal();
-        });
+        // Create first project button
+        const createFirstProjectBtn = document.getElementById('createFirstProjectBtn');
+        if (createFirstProjectBtn) {
+            createFirstProjectBtn.addEventListener('click', () => {
+                this.openProjectModal();
+            });
+        }
         
         // Project form submission
-        document.getElementById('projectForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.saveProject();
-        });
+        const projectForm = document.getElementById('projectForm');
+        if (projectForm) {
+            projectForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.saveProject();
+            });
+        }
         
         // Cancel project button
-        document.getElementById('cancelProjectBtn').addEventListener('click', () => {
-            this.closeProjectModal();
-        });
-        
-        // Project selection change
-        document.getElementById('projectSelect').addEventListener('change', (e) => {
-            const projectId = e.target.value;
-            if (projectId) {
-                this.selectProject(projectId);
-            } else {
-                this.clearProjectDisplay();
-            }
-        });
+        const cancelProjectBtn = document.getElementById('cancelProjectBtn');
+        if (cancelProjectBtn) {
+            cancelProjectBtn.addEventListener('click', () => {
+                this.closeProjectModal();
+            });
+        }
         
         // Edit project button
-        document.getElementById('editProjectBtn').addEventListener('click', () => {
-            if (this.currentProject) {
-                this.openProjectModal(this.currentProject.id);
-            }
-        });
+        const editProjectBtn = document.getElementById('editProjectBtn');
+        if (editProjectBtn) {
+            editProjectBtn.addEventListener('click', () => {
+                if (this.currentProject) {
+                    this.openProjectModal(this.currentProject.id);
+                }
+            });
+        }
         
         // Delete project button
-        document.getElementById('deleteProjectBtn').addEventListener('click', () => {
-            if (this.currentProject) {
-                this.confirmDeleteProject(this.currentProject.id);
-            }
-        });
+        const deleteProjectBtn = document.getElementById('deleteProjectBtn');
+        if (deleteProjectBtn) {
+            deleteProjectBtn.addEventListener('click', () => {
+                if (this.currentProject) {
+                    this.confirmDeleteProject(this.currentProject.id);
+                }
+            });
+        }
         
         // Cancel delete button
-        document.getElementById('cancelDeleteBtn').addEventListener('click', () => {
-            this.closeDeleteModal();
-        });
+        const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+        if (cancelDeleteBtn) {
+            cancelDeleteBtn.addEventListener('click', () => {
+                this.closeDeleteModal();
+            });
+        }
         
         // Confirm delete button
-        document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
-            if (this.deleteTarget && this.deleteTarget.type === 'project') {
-                this.deleteProject(this.deleteTarget.id);
-            }
-            this.closeDeleteModal();
-        });
+        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+        if (confirmDeleteBtn) {
+            confirmDeleteBtn.addEventListener('click', () => {
+                if (this.deleteTarget && this.deleteTarget.type === 'project') {
+                    this.deleteProject(this.deleteTarget.id);
+                }
+                this.closeDeleteModal();
+            });
+        }
     },
     
     /**
@@ -83,6 +102,8 @@ const ProjectsManager = {
     loadProjects: function() {
         const projects = StorageManager.getProjects();
         const projectSelect = document.getElementById('projectSelect');
+        
+        if (!projectSelect) return;
         
         // Clear existing options
         projectSelect.innerHTML = '<option value="">Select a project</option>';
@@ -99,8 +120,11 @@ const ProjectsManager = {
         this.toggleEmptyState(projects.length === 0);
         
         // Disable project-specific buttons initially
-        document.getElementById('editProjectBtn').disabled = true;
-        document.getElementById('deleteProjectBtn').disabled = true;
+        const editBtn = document.getElementById('editProjectBtn');
+        const deleteBtn = document.getElementById('deleteProjectBtn');
+        
+        if (editBtn) editBtn.disabled = true;
+        if (deleteBtn) deleteBtn.disabled = true;
     },
     
     /**
@@ -108,7 +132,13 @@ const ProjectsManager = {
      * @param {Boolean} isEmpty - Whether there are no projects
      */
     toggleEmptyState: function(isEmpty) {
-        document.getElementById('noProjectsPlaceholder').style.display = isEmpty ? 'block' : 'none';
+        const noProjectsPlaceholder = document.getElementById('noProjectsPlaceholder');
+        const projectDetails = document.getElementById('projectDetails');
+        const taskManagement = document.getElementById('taskManagement');
+        
+        if (noProjectsPlaceholder) {
+            noProjectsPlaceholder.style.display = isEmpty ? 'block' : 'none';
+        }
         
         if (isEmpty) {
             this.clearProjectDisplay();
@@ -120,15 +150,26 @@ const ProjectsManager = {
      */
     clearProjectDisplay: function() {
         this.currentProject = null;
-        document.getElementById('projectDetails').style.display = 'none';
-        document.getElementById('taskManagement').style.display = 'none';
-        document.getElementById('editProjectBtn').disabled = true;
-        document.getElementById('deleteProjectBtn').disabled = true;
+        
+        const projectDetails = document.getElementById('projectDetails');
+        const taskManagement = document.getElementById('taskManagement');
+        const editProjectBtn = document.getElementById('editProjectBtn');
+        const deleteProjectBtn = document.getElementById('deleteProjectBtn');
+        
+        if (projectDetails) projectDetails.classList.add('hidden');
+        if (taskManagement) taskManagement.classList.add('hidden');
+        if (editProjectBtn) editProjectBtn.disabled = true;
+        if (deleteProjectBtn) deleteProjectBtn.disabled = true;
         
         // Clear project select if it has a value
         const projectSelect = document.getElementById('projectSelect');
-        if (projectSelect.value) {
+        if (projectSelect && projectSelect.value) {
             projectSelect.value = '';
+        }
+        
+        // Notify TasksManager that no project is selected
+        if (window.TasksManager) {
+            window.TasksManager.currentProjectId = null;
         }
     },
     
@@ -143,26 +184,42 @@ const ProjectsManager = {
         this.currentProject = project;
         
         // Enable project action buttons
-        document.getElementById('editProjectBtn').disabled = false;
-        document.getElementById('deleteProjectBtn').disabled = false;
+        const editProjectBtn = document.getElementById('editProjectBtn');
+        const deleteProjectBtn = document.getElementById('deleteProjectBtn');
+        
+        if (editProjectBtn) editProjectBtn.disabled = false;
+        if (deleteProjectBtn) deleteProjectBtn.disabled = false;
         
         // Update project details section
-        document.getElementById('projectTitle').textContent = project.name;
-        document.getElementById('projectDescription').textContent = project.description || 'No description provided.';
+        const projectTitle = document.getElementById('projectTitle');
+        const projectDescription = document.getElementById('projectDescription');
+        const projectStartDate = document.getElementById('projectStartDate');
+        const projectEndDate = document.getElementById('projectEndDate');
+        const projectStatus = document.getElementById('projectStatus');
+        
+        if (projectTitle) projectTitle.textContent = project.name;
+        if (projectDescription) projectDescription.textContent = project.description || 'No description provided.';
         
         // Format dates
         const startDate = project.startDate ? new Date(project.startDate).toLocaleDateString() : 'Not set';
         const endDate = project.endDate ? new Date(project.endDate).toLocaleDateString() : 'Not set';
         
-        document.getElementById('projectStartDate').textContent = startDate;
-        document.getElementById('projectEndDate').textContent = endDate;
+        if (projectStartDate) projectStartDate.textContent = startDate;
+        if (projectEndDate) projectEndDate.textContent = endDate;
+        if (projectStatus) projectStatus.textContent = project.status || 'Active';
         
         // Show project details
-        document.getElementById('projectDetails').style.display = 'block';
-        document.getElementById('taskManagement').style.display = 'block';
+        const projectDetails = document.getElementById('projectDetails');
+        const taskManagement = document.getElementById('taskManagement');
         
-        // Load tasks for this project
-        TasksManager.loadTasks(projectId);
+        if (projectDetails) projectDetails.classList.remove('hidden');
+        if (taskManagement) taskManagement.classList.remove('hidden');
+        
+        // Update TasksManager with the current project
+        if (window.TasksManager) {
+            TasksManager.currentProjectId = projectId;
+            TasksManager.loadTasks(projectId);
+        }
         
         // Update project metrics
         this.updateProjectMetrics(projectId);
@@ -174,16 +231,27 @@ const ProjectsManager = {
      */
     updateProjectMetrics: function(projectId) {
         const tasks = StorageManager.getTasksByProject(projectId);
+        
+        // Get DOM elements
+        const projectCompletionPercentage = document.getElementById('projectCompletionPercentage');
+        const projectProgressBar = document.getElementById('projectProgressBar');
+        const todoCount = document.getElementById('todoCount');
+        const inProgressCount = document.getElementById('inProgressCount');
+        const reviewCount = document.getElementById('reviewCount');
+        const doneCount = document.getElementById('doneCount');
+        const totalTimeSpent = document.getElementById('totalTimeSpent');
+        const avgTaskCompletion = document.getElementById('avgTaskCompletion');
+        
         if (!tasks.length) {
             // No tasks yet, show empty state
-            document.getElementById('projectCompletionPercentage').textContent = '0%';
-            document.getElementById('projectProgressBar').style.width = '0%';
-            document.getElementById('todoCount').textContent = '0';
-            document.getElementById('inProgressCount').textContent = '0';
-            document.getElementById('reviewCount').textContent = '0';
-            document.getElementById('doneCount').textContent = '0';
-            document.getElementById('totalTimeSpent').textContent = '0h 0m';
-            document.getElementById('avgTaskCompletion').textContent = '0h 0m';
+            if (projectCompletionPercentage) projectCompletionPercentage.textContent = '0%';
+            if (projectProgressBar) projectProgressBar.style.width = '0%';
+            if (todoCount) todoCount.textContent = '0';
+            if (inProgressCount) inProgressCount.textContent = '0';
+            if (reviewCount) reviewCount.textContent = '0';
+            if (doneCount) doneCount.textContent = '0';
+            if (totalTimeSpent) totalTimeSpent.textContent = '0h 0m';
+            if (avgTaskCompletion) avgTaskCompletion.textContent = '0h 0m';
             return;
         }
         
@@ -195,7 +263,7 @@ const ProjectsManager = {
             'done': 0
         };
         
-        let totalTimeSpent = 0;
+        let totalTimeSpentMs = 0;
         let completedTasks = 0;
         let completedTasksTime = 0;
         
@@ -218,7 +286,7 @@ const ProjectsManager = {
                     taskTime += (now - lastStarted);
                 }
                 
-                totalTimeSpent += taskTime;
+                totalTimeSpentMs += taskTime;
                 
                 // Track completed tasks time for average calculation
                 if (task.status === 'done') {
@@ -229,16 +297,17 @@ const ProjectsManager = {
         });
         
         // Update task counts
-        document.getElementById('todoCount').textContent = taskCounts.todo;
-        document.getElementById('inProgressCount').textContent = taskCounts['in-progress'];
-        document.getElementById('reviewCount').textContent = taskCounts.review;
-        document.getElementById('doneCount').textContent = taskCounts.done;
+        if (todoCount) todoCount.textContent = taskCounts.todo;
+        if (inProgressCount) inProgressCount.textContent = taskCounts['in-progress'];
+        if (reviewCount) reviewCount.textContent = taskCounts.review;
+        if (doneCount) doneCount.textContent = taskCounts.done;
         
         // Calculate and update completion percentage
         const totalTasks = tasks.length;
         const completionPercentage = Math.round((taskCounts.done / totalTasks) * 100);
-        document.getElementById('projectCompletionPercentage').textContent = `${completionPercentage}%`;
-        document.getElementById('projectProgressBar').style.width = `${completionPercentage}%`;
+        
+        if (projectCompletionPercentage) projectCompletionPercentage.textContent = `${completionPercentage}%`;
+        if (projectProgressBar) projectProgressBar.style.width = `${completionPercentage}%`;
         
         // Format and display time metrics
         const formatTime = (timeInMs) => {
@@ -247,11 +316,11 @@ const ProjectsManager = {
             return `${hours}h ${minutes}m`;
         };
         
-        document.getElementById('totalTimeSpent').textContent = formatTime(totalTimeSpent);
+        if (totalTimeSpent) totalTimeSpent.textContent = formatTime(totalTimeSpentMs);
         
         // Calculate and display average task completion time
         const avgTime = completedTasks > 0 ? completedTasksTime / completedTasks : 0;
-        document.getElementById('avgTaskCompletion').textContent = formatTime(avgTime);
+        if (avgTaskCompletion) avgTaskCompletion.textContent = formatTime(avgTime);
     },
     
     /**
@@ -262,53 +331,69 @@ const ProjectsManager = {
         const modal = document.getElementById('projectModal');
         const form = document.getElementById('projectForm');
         const titleEl = document.getElementById('projectModalTitle');
+        const projectIdField = document.getElementById('projectId');
+        const projectNameInput = document.getElementById('projectNameInput');
+        const projectDescInput = document.getElementById('projectDescInput');
+        const projectStartInput = document.getElementById('projectStartInput');
+        const projectEndInput = document.getElementById('projectEndInput');
+        
+        if (!modal || !form) return;
         
         // Reset form
         form.reset();
-        document.getElementById('projectId').value = '';
+        if (projectIdField) projectIdField.value = '';
         
         if (projectId) {
             // Edit mode
             const project = StorageManager.getProjectById(projectId);
             if (!project) return;
             
-            titleEl.textContent = 'Edit Project';
-            document.getElementById('projectId').value = project.id;
-            document.getElementById('projectNameInput').value = project.name;
-            document.getElementById('projectDescInput').value = project.description || '';
-            document.getElementById('projectStartInput').value = project.startDate || '';
-            document.getElementById('projectEndInput').value = project.endDate || '';
+            if (titleEl) titleEl.textContent = 'Edit Project';
+            if (projectIdField) projectIdField.value = project.id;
+            if (projectNameInput) projectNameInput.value = project.name;
+            if (projectDescInput) projectDescInput.value = project.description || '';
+            if (projectStartInput) projectStartInput.value = project.startDate || '';
+            if (projectEndInput) projectEndInput.value = project.endDate || '';
         } else {
             // New project mode
-            titleEl.textContent = 'New Project';
+            if (titleEl) titleEl.textContent = 'New Project';
             
             // Set default dates
             const today = new Date().toISOString().split('T')[0];
-            document.getElementById('projectStartInput').value = today;
+            if (projectStartInput) projectStartInput.value = today;
         }
         
-        modal.style.display = 'flex';
+        // Show modal
+        modal.classList.add('active');
     },
     
     /**
      * Close the project modal
      */
     closeProjectModal: function() {
-        document.getElementById('projectModal').style.display = 'none';
+        const modal = document.getElementById('projectModal');
+        if (modal) modal.classList.remove('active');
     },
     
     /**
      * Save the project from form data
      */
     saveProject: function() {
-        const form = document.getElementById('projectForm');
-        const projectId = document.getElementById('projectId').value;
+        const projectIdField = document.getElementById('projectId');
+        const projectNameInput = document.getElementById('projectNameInput');
+        const projectDescInput = document.getElementById('projectDescInput');
+        const projectStartInput = document.getElementById('projectStartInput');
+        const projectEndInput = document.getElementById('projectEndInput');
+        
+        if (!projectNameInput) return;
+        
+        const projectId = projectIdField ? projectIdField.value : '';
         
         const projectData = {
-            name: document.getElementById('projectNameInput').value,
-            description: document.getElementById('projectDescInput').value,
-            startDate: document.getElementById('projectStartInput').value || null,
-            endDate: document.getElementById('projectEndInput').value || null,
+            name: projectNameInput.value,
+            description: projectDescInput ? projectDescInput.value : '',
+            startDate: projectStartInput ? projectStartInput.value || null : null,
+            endDate: projectEndInput ? projectEndInput.value || null : null,
             status: 'active' // Default status
         };
         
@@ -334,8 +419,10 @@ const ProjectsManager = {
             
             // Select the saved project
             const projectSelect = document.getElementById('projectSelect');
-            projectSelect.value = savedProject.id;
-            this.selectProject(savedProject.id);
+            if (projectSelect) {
+                projectSelect.value = savedProject.id;
+                this.selectProject(savedProject.id);
+            }
         }
     },
     
@@ -352,17 +439,25 @@ const ProjectsManager = {
             id: projectId
         };
         
-        document.getElementById('deleteMessage').textContent = 
-            `Are you sure you want to delete the project "${project.name}"? This will also delete all tasks associated with this project. This action cannot be undone.`;
-            
-        document.getElementById('deleteModal').style.display = 'flex';
+        const deleteMessage = document.getElementById('deleteMessage');
+        const deleteModal = document.getElementById('deleteModal');
+        
+        if (deleteMessage) {
+            deleteMessage.textContent = 
+                `Are you sure you want to delete the project "${project.name}"? This will also delete all tasks associated with this project. This action cannot be undone.`;
+        }
+        
+        if (deleteModal) {
+            deleteModal.classList.add('active');
+        }
     },
     
     /**
      * Close the delete confirmation modal
      */
     closeDeleteModal: function() {
-        document.getElementById('deleteModal').style.display = 'none';
+        const deleteModal = document.getElementById('deleteModal');
+        if (deleteModal) deleteModal.classList.remove('active');
         this.deleteTarget = null;
     },
     

@@ -18,6 +18,11 @@ class StorageManager {
         return JSON.parse(localStorage.getItem(this.STORAGE_KEYS.PROJECTS) || '[]');
     }
 
+    static getProjectById(projectId) {
+        const projects = this.getProjects();
+        return projects.find(p => p.id === projectId) || null;
+    }
+
     static saveProjects(projects) {
         localStorage.setItem(this.STORAGE_KEYS.PROJECTS, JSON.stringify(projects));
     }
@@ -57,6 +62,7 @@ class StorageManager {
         
         // Delete associated tasks and files
         this.deleteProjectTasks(projectId);
+        return true;
     }
 
     /**
@@ -64,6 +70,16 @@ class StorageManager {
      */
     static getTasks() {
         return JSON.parse(localStorage.getItem(this.STORAGE_KEYS.TASKS) || '[]');
+    }
+
+    static getTaskById(taskId) {
+        const tasks = this.getTasks();
+        return tasks.find(t => t.id === taskId) || null;
+    }
+
+    static getTasksByProject(projectId) {
+        const tasks = this.getTasks();
+        return tasks.filter(t => t.projectId === projectId);
     }
 
     static saveTasks(tasks) {
@@ -81,9 +97,12 @@ class StorageManager {
             priority: task.priority || 'medium',
             attachments: task.attachments || [],
             tags: task.tags || [],
-            timeSpent: task.timeSpent || 0,
-            estimatedTime: task.estimatedTime || 0,
-            subtasks: task.subtasks || []
+            notes: [],
+            timeTracking: {
+                isActive: false,
+                totalTime: 0,
+                lastStarted: null
+            }
         };
         tasks.push(newTask);
         this.saveTasks(tasks);
@@ -113,6 +132,7 @@ class StorageManager {
         // Delete associated notes and files
         this.deleteTaskNotes(taskId);
         this.deleteTaskFiles(taskId);
+        return true;
     }
 
     static deleteProjectTasks(projectId) {
@@ -128,61 +148,76 @@ class StorageManager {
     /**
      * Task Notes Management
      */
-    static getTaskNotes() {
-        return JSON.parse(localStorage.getItem(this.STORAGE_KEYS.NOTES) || '{}');
-    }
-
-    static saveTaskNotes(notes) {
-        localStorage.setItem(this.STORAGE_KEYS.NOTES, JSON.stringify(notes));
-    }
-
-    static addTaskNote(taskId, content) {
-        const notes = this.getTaskNotes();
-        if (!notes[taskId]) {
-            notes[taskId] = [];
+    static addTaskNote(taskId, text) {
+        const tasks = this.getTasks();
+        const index = tasks.findIndex(t => t.id === taskId);
+        
+        if (index !== -1) {
+            const task = tasks[index];
+            
+            if (!task.notes) {
+                task.notes = [];
+            }
+            
+            const note = {
+                id: Date.now().toString(),
+                text,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+            
+            task.notes.push(note);
+            this.saveTasks(tasks);
+            return task;
         }
-        const newNote = {
-            id: Date.now().toString(),
-            content,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        };
-        notes[taskId].push(newNote);
-        this.saveTaskNotes(notes);
-        return newNote;
+        return null;
     }
-
-    static updateTaskNote(taskId, noteId, content) {
-        const notes = this.getTaskNotes();
-        if (notes[taskId]) {
-            const index = notes[taskId].findIndex(n => n.id === noteId);
-            if (index !== -1) {
-                notes[taskId][index] = {
-                    ...notes[taskId][index],
-                    content,
+    
+    static updateTaskNote(taskId, noteId, text) {
+        const tasks = this.getTasks();
+        const taskIndex = tasks.findIndex(t => t.id === taskId);
+        
+        if (taskIndex !== -1 && tasks[taskIndex].notes) {
+            const noteIndex = tasks[taskIndex].notes.findIndex(n => n.id === noteId);
+            
+            if (noteIndex !== -1) {
+                tasks[taskIndex].notes[noteIndex] = {
+                    ...tasks[taskIndex].notes[noteIndex],
+                    text,
                     updatedAt: new Date().toISOString()
                 };
-                this.saveTaskNotes(notes);
-                return notes[taskId][index];
+                
+                this.saveTasks(tasks);
+                return tasks[taskIndex];
             }
         }
         return null;
     }
-
+    
     static deleteTaskNote(taskId, noteId) {
-        const notes = this.getTaskNotes();
-        if (notes[taskId]) {
-            notes[taskId] = notes[taskId].filter(n => n.id !== noteId);
-            this.saveTaskNotes(notes);
+        const tasks = this.getTasks();
+        const taskIndex = tasks.findIndex(t => t.id === taskId);
+        
+        if (taskIndex !== -1 && tasks[taskIndex].notes) {
+            tasks[taskIndex].notes = tasks[taskIndex].notes.filter(n => n.id !== noteId);
+            this.saveTasks(tasks);
+            return true;
         }
+        return false;
     }
-
+    
     static deleteTaskNotes(taskId) {
-        const notes = this.getTaskNotes();
-        delete notes[taskId];
-        this.saveTaskNotes(notes);
+        const tasks = this.getTasks();
+        const taskIndex = tasks.findIndex(t => t.id === taskId);
+        
+        if (taskIndex !== -1) {
+            tasks[taskIndex].notes = [];
+            this.saveTasks(tasks);
+            return true;
+        }
+        return false;
     }
-
+    
     /**
      * File Management
      */
@@ -221,15 +256,75 @@ class StorageManager {
         if (files[taskId]) {
             files[taskId] = files[taskId].filter(f => f.id !== fileId);
             this.saveTaskFiles(files);
+            return true;
         }
+        return false;
     }
 
     static deleteTaskFiles(taskId) {
         const files = this.getTaskFiles();
         delete files[taskId];
         this.saveTaskFiles(files);
+        return true;
     }
-
+    
+    /**
+     * Time Tracking
+     */
+    static toggleTimeTracking(taskId) {
+        const task = this.getTaskById(taskId);
+        if (!task || task.status !== 'in-progress') return null;
+        
+        // Initialize timeTracking object if it doesn't exist
+        let timeTracking = task.timeTracking || {
+            isActive: false,
+            totalTime: 0,
+            lastStarted: null
+        };
+        
+        // Check if any other task is currently being tracked
+        if (!timeTracking.isActive) {
+            const tasks = this.getTasks();
+            const activeTask = tasks.find(t => 
+                t.id !== taskId && 
+                t.timeTracking && 
+                t.timeTracking.isActive
+            );
+            
+            // Pause the other active task first
+            if (activeTask) {
+                this.toggleTimeTracking(activeTask.id);
+            }
+        }
+        
+        // Toggle tracking state
+        if (timeTracking.isActive) {
+            // Pause: calculate time spent and add to total
+            const now = new Date();
+            const lastStarted = new Date(timeTracking.lastStarted);
+            const timeSpentThisSession = now - lastStarted;
+            
+            timeTracking.totalTime += timeSpentThisSession;
+            timeTracking.isActive = false;
+            timeTracking.lastStarted = null;
+        } else {
+            // Start: set as active and record start time
+            timeTracking.isActive = true;
+            timeTracking.lastStarted = new Date().toISOString();
+            
+            // If task hasn't been started before, record start date
+            if (!task.startedAt) {
+                task.startedAt = new Date().toISOString();
+            }
+        }
+        
+        // Update task with new timeTracking data
+        return this.updateTask(taskId, {
+            timeTracking: timeTracking,
+            startedAt: task.startedAt
+        });
+    }
+    
     /**
      * Settings Management
      */
@@ -279,7 +374,6 @@ class StorageManager {
         const data = {
             projects: this.getProjects(),
             tasks: this.getTasks(),
-            notes: this.getTaskNotes(),
             files: this.getTaskFiles(),
             settings: this.getSettings()
         };
@@ -292,7 +386,6 @@ class StorageManager {
             
             if (data.projects) localStorage.setItem(this.STORAGE_KEYS.PROJECTS, JSON.stringify(data.projects));
             if (data.tasks) localStorage.setItem(this.STORAGE_KEYS.TASKS, JSON.stringify(data.tasks));
-            if (data.notes) localStorage.setItem(this.STORAGE_KEYS.NOTES, JSON.stringify(data.notes));
             if (data.files) localStorage.setItem(this.STORAGE_KEYS.FILES, JSON.stringify(data.files));
             if (data.settings) localStorage.setItem(this.STORAGE_KEYS.SETTINGS, JSON.stringify(data.settings));
             
