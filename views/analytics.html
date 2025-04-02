@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics - Project-TMS</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Custom styles -->
+    <link rel="stylesheet" href="../css/main.css">
+</head>
+<body class="bg-gray-50 dark:bg-gray-900">
+    <!-- Header -->
+    <header class="sticky top-0 z-10 py-4 px-6">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold bg-gradient-to-r from-purple-400 to-blue-500 bg-clip-text text-transparent">Project-TMS</h1>
+            <nav class="flex items-center space-x-4">
+                <a href="index.html">Dashboard</a>
+                <a href="analytics.html" class="active">Analytics</a>
+                <a href="settings.html">Settings</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto py-6 px-4">
+        <h2 class="text-2xl font-bold mb-6">Analytics Dashboard</h2>
+        
+        <!-- Analytics Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+            <div class="card p-6">
+                <h3 class="text-sm font-medium text-text-secondary">Total Projects</h3>
+                <p class="text-2xl font-bold mt-2" id="totalProjects">0</p>
+                <p class="text-sm text-green-500 mt-1" id="projectChange">+0% from last month</p>
+            </div>
+            <div class="card p-6">
+                <h3 class="text-sm font-medium text-text-secondary">Active Tasks</h3>
+                <p class="text-2xl font-bold mt-2" id="activeTasks">0</p>
+                <p class="text-sm text-red-500 mt-1" id="taskChange">+0% from last month</p>
+            </div>
+            <div class="card p-6">
+                <h3 class="text-sm font-medium text-text-secondary">Completion Rate</h3>
+                <p class="text-2xl font-bold mt-2" id="completionRate">0%</p>
+                <p class="text-sm text-green-500 mt-1" id="rateChange">+0% from last month</p>
+            </div>
+            <div class="card p-6">
+                <h3 class="text-sm font-medium text-text-secondary">Time Tracked</h3>
+                <p class="text-2xl font-bold mt-2" id="timeTracked">0h</p>
+                <p class="text-sm text-green-500 mt-1" id="timeChange">+0h from last month</p>
+            </div>
+        </div>
+
+        <!-- Project Filter -->
+        <div class="mb-6 card p-4">
+            <div class="flex flex-wrap items-center gap-4">
+                <div>
+                    <label for="analyticsProjectSelect" class="block text-sm font-medium mb-1">Filter by Project</label>
+                    <select id="analyticsProjectSelect" class="form-control">
+                        <option value="">All Projects</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="analyticsPeriodSelect" class="block text-sm font-medium mb-1">Time Period</label>
+                    <select id="analyticsPeriodSelect" class="form-control">
+                        <option value="all">All Time</option>
+                        <option value="month">This Month</option>
+                        <option value="week">This Week</option>
+                    </select>
+                </div>
+                <div class="ml-auto self-end">
+                    <button id="exportAnalyticsBtn" class="btn btn-secondary">
+                        <i class="fas fa-download mr-2"></i> Export
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- Project Progress Chart -->
+            <div class="card p-6">
+                <h3 class="text-lg font-semibold mb-4">Project Progress</h3>
+                <div class="h-80">
+                    <canvas id="projectProgressChart" data-chart="ProjectProgress"></canvas>
+                </div>
+            </div>
+
+            <!-- Task Distribution Chart -->
+            <div class="card p-6">
+                <h3 class="text-lg font-semibold mb-4">Task Distribution</h3>
+                <div class="h-80">
+                    <canvas id="taskDistributionChart" data-chart="TaskDistribution"></canvas>
+                </div>
+            </div>
+            
+            <!-- Time Tracking Chart -->
+            <div class="card p-6">
+                <h3 class="text-lg font-semibold mb-4">Time Spent by Status</h3>
+                <div class="h-80">
+                    <canvas id="timeTrackingChart" data-chart="TimeTracking"></canvas>
+                </div>
+            </div>
+            
+            <!-- Priority Distribution Chart -->
+            <div class="card p-6">
+                <h3 class="text-lg font-semibold mb-4">Tasks by Priority</h3>
+                <div class="h-80">
+                    <canvas id="priorityChart" data-chart="Priority"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Time Trend Chart -->
+        <div class="card p-6 mb-6">
+            <h3 class="text-lg font-semibold mb-4">Time Distribution by Day</h3>
+            <div class="h-80">
+                <canvas id="timeTrendChart" data-chart="TimeTrend"></canvas>
+            </div>
+        </div>
+        
+        <!-- Team Performance -->
+        <div class="card p-6 mb-6">
+            <h3 class="text-lg font-semibold mb-4">Task Productivity</h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                    <thead>
+                        <tr class="border-b border-border-color">
+                            <th class="text-left py-3 px-4">Task Status</th>
+                            <th class="text-left py-3 px-4">Count</th>
+                            <th class="text-left py-3 px-4">Time Spent</th>
+                            <th class="text-left py-3 px-4">Avg Time per Task</th>
+                        </tr>
+                    </thead>
+                    <tbody id="taskProductivityBody">
+                        <!-- Task productivity data will be inserted here -->
+                        <tr class="border-b border-border-color">
+                            <td class="py-3 px-4">To Do</td>
+                            <td class="py-3 px-4" id="todoTaskCount">0</td>
+                            <td class="py-3 px-4" id="todoTimeSpent">0h 0m</td>
+                            <td class="py-3 px-4" id="todoAvgTime">0h 0m</td>
+                        </tr>
+                        <tr class="border-b border-border-color">
+                            <td class="py-3 px-4">In Progress</td>
+                            <td class="py-3 px-4" id="inProgressTaskCount">0</td>
+                            <td class="py-3 px-4" id="inProgressTimeSpent">0h 0m</td>
+                            <td class="py-3 px-4" id="inProgressAvgTime">0h 0m</td>
+                        </tr>
+                        <tr class="border-b border-border-color">
+                            <td class="py-3 px-4">Review</td>
+                            <td class="py-3 px-4" id="reviewTaskCount">0</td>
+                            <td class="py-3 px-4" id="reviewTimeSpent">0h 0m</td>
+                            <td class="py-3 px-4" id="reviewAvgTime">0h 0m</td>
+                        </tr>
+                        <tr class="border-b border-border-color">
+                            <td class="py-3 px-4">Done</td>
+                            <td class="py-3 px-4" id="doneTaskCount">0</td>
+                            <td class="py-3 px-4" id="doneTimeSpent">0h 0m</td>
+                            <td class="py-3 px-4" id="doneAvgTime">0h 0m</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Recent Activity -->
+        <div class="card p-6">
+            <h3 class="text-lg font-semibold mb-4">Recent Activity</h3>
+            <div id="recentActivityContainer" class="space-y-4">
+                <!-- Activity items will be inserted here -->
+                <div class="empty-state py-6">
+                    <p class="text-text-secondary">No recent activity to display</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="py-4 px-6 border-t border-border-color mt-auto">
+        <div class="container mx-auto text-center text-sm">
+            &copy; 2023 Project-TMS. All rights reserved.
+        </div>
+    </footer>
+
+    <!-- Export Modal -->
+    <div id="exportModal" class="modal-container">
+        <div class="modal-content max-w-md">
+            <div class="modal-header">
+                <h2 class="modal-title">Export Analytics</h2>
+                <button id="closeExportModalBtn" class="modal-close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <label class="form-label">Export Format</label>
+                    <div class="space-y-2">
+                        <div class="form-check">
+                            <input type="radio" id="exportCsv" name="exportFormat" value="csv" class="form-check-input" checked>
+                            <label for="exportCsv" class="form-check-label">CSV</label>
+                        </div>
+                        <div class="form-check">
+                            <input type="radio" id="exportJson" name="exportFormat" value="json" class="form-check-input">
+                            <label for="exportJson" class="form-check-label">JSON</label>
+                        </div>
+                        <div class="form-check">
+                            <input type="radio" id="exportPdf" name="exportFormat" value="pdf" class="form-check-input">
+                            <label for="exportPdf" class="form-check-label">PDF</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <label class="form-label">Include</label>
+                    <div class="space-y-2">
+                        <div class="form-check">
+                            <input type="checkbox" id="includeProjectData" class="form-check-input" checked>
+                            <label for="includeProjectData" class="form-check-label">Project Data</label>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" id="includeTaskData" class="form-check-input" checked>
+                            <label for="includeTaskData" class="form-check-label">Task Data</label>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" id="includeTimeData" class="form-check-input" checked>
+                            <label for="includeTimeData" class="form-check-label">Time Tracking Data</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelExportBtn" class="btn btn-secondary">Cancel</button>
+                <button id="confirmExportBtn" class="btn btn-primary">Export</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <!-- Utility libraries -->
+    <script src="../js/utils/event-bus.js"></script>
+    <script src="../js/utils/date-formatter.js"></script>
+    
+    <!-- Core functionality -->
+    <script src="../js/core/storage.js"></script>
+    
+    <!-- UI Components -->
+    <script src="../js/components/ui/notifications.js"></script>
+    <script src="../js/components/ui/theme-switcher.js"></script>
+    <script src="../js/components/charts/project-charts.js"></script>
+    
+    <!-- Analytics Module -->
+    <script src="../js/features/analytics/analytics-manager.js"></script>
+    
+    <!-- Main App -->
+    <script src="../js/core/app.js"></script>
+</body>
+</html>

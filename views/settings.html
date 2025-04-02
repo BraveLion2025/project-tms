@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - Project-TMS</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Custom styles -->
+    <link rel="stylesheet" href="../css/main.css">
+</head>
+<body class="bg-gray-50 dark:bg-gray-900">
+    <!-- Header -->
+    <header class="sticky top-0 z-10 py-4 px-6">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold bg-gradient-to-r from-purple-400 to-blue-500 bg-clip-text text-transparent">Project-TMS</h1>
+            <nav class="flex items-center space-x-4">
+                <a href="index.html">Dashboard</a>
+                <a href="analytics.html">Analytics</a>
+                <a href="settings.html" class="active">Settings</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto py-6 px-4">
+        <div class="max-w-4xl mx-auto">
+            <h2 class="text-2xl font-bold mb-6">Settings</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                <div class="md:col-span-1">
+                    <!-- Settings Navigation Sidebar -->
+                    <div class="card p-4">
+                        <nav class="settings-nav space-y-1">
+                            <a href="#theme-settings" class="settings-nav-item active">
+                                <i class="fas fa-palette mr-2"></i> Theme
+                            </a>
+                            <a href="#appearance-settings" class="settings-nav-item">
+                                <i class="fas fa-brush mr-2"></i> Appearance
+                            </a>
+                            <a href="#data-settings" class="settings-nav-item">
+                                <i class="fas fa-database mr-2"></i> Data
+                            </a>
+                            <a href="#notifications-settings" class="settings-nav-item">
+                                <i class="fas fa-bell mr-2"></i> Notifications
+                            </a>
+                            <a href="#about" class="settings-nav-item">
+                                <i class="fas fa-info-circle mr-2"></i> About
+                            </a>
+                        </nav>
+                    </div>
+                </div>
+                
+                <div class="md:col-span-3">
+                    <!-- Theme Settings -->
+                    <section id="theme-settings" class="card p-6 mb-6">
+                        <h3 class="text-xl font-semibold mb-4">Theme Settings</h3>
+                        
+                        <div class="space-y-6">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">
+                                    Theme Selection
+                                </label>
+                                <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                                    <!-- Light Theme -->
+                                    <button class="theme-option relative p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-purple-500 transition-colors" data-theme="light">
+                                        <div class="theme-preview-light w-full h-32 rounded mb-2"></div>
+                                        <span class="text-sm font-medium">Light</span>
+                                        <span class="absolute top-2 right-2 text-lg">☀️</span>
+                                    </button>
+                                    
+                                    <!-- Dark Theme -->
+                                    <button class="theme-option relative p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-purple-500 transition-colors" data-theme="dark">
+                                        <div class="theme-preview-dark w-full h-32 rounded mb-2"></div>
+                                        <span class="text-sm font-medium">Dark</span>
+                                        <span class="absolute top-2 right-2 text-lg">🌙</span>
+                                    </button>
+                                    
+                                    <!-- Digital Void Theme -->
+                                    <button class="theme-option relative p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-purple-500 transition-colors" data-theme="digital-void">
+                                        <div class="theme-preview-digital-void w-full h-32 rounded mb-2"></div>
+                                        <span class="text-sm font-medium">Digital Void</span>
+                                        <span class="absolute top-2 right-2 text-lg">🌌</span>
+                                    </button>
+                                    
+                                    <!-- Neo Synth Theme -->
+                                    <button class="theme-option relative p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-purple-500 transition-colors" data-theme="neo-synth">
+                                        <div class="theme-preview-neo-synth w-full h-32 rounded mb-2"></div>
+                                        <span class="text-sm font-medium">Neo Synth</span>
+                                        <span class="absolute top-2 right-2 text-lg">🌈</span>
+                                    </button>
+                                    
+                                    <!-- Aurora Theme -->
+                                    <button class="theme-option relative p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-purple-500 transition-colors" data-theme="aurora">
+                                        <div class="theme-preview-aurora w-full h-32 rounded mb-2"></div>
+                                        <span class="text-sm font-medium">Aurora</span>
+                                        <span class="absolute top-2 right-2 text-lg">✨</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium mb-2">
+                                    Custom Theme Colors
+                                </label>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs mb-1">Primary Color</label>
+                                        <input type="color" id="primaryColorInput" class="color-picker-input w-full h-10 rounded cursor-pointer" data-var="--accent-primary">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs mb-1">Secondary Color</label>
+                                        <input type="color" id="secondaryColorInput" class="color-picker-input w-full h-10 rounded cursor-pointer" data-var="--accent-secondary">
+                                    </div>
+                                </div>
+                                <div class="mt-4">
+                                    <p class="text-sm mb-2">Preview</p>
+                                    <div class="flex space-x-4">
+                                        <!-- Preview Button -->
+                                        <button class="btn bg-accent-primary hover:bg-accent-secondary text-white px-4 py-2 rounded-md transition-all">
+                                            Primary Button
+                                        </button>
+                                        
+                                        <!-- Preview Card -->
+                                        <div class="card p-3 rounded-md border border-accent-primary relative">
+                                            <div class="absolute inset-0 bg-accent-primary opacity-10 rounded-md"></div>
+                                            <p class="text-sm font-medium text-accent-primary">Accent Text</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium mb-2">
+                                    Theme Export/Import
+                                </label>
+                                <div class="flex space-x-4">
+                                    <button id="exportThemeBtn" class="btn btn-secondary">
+                                        <i class="fas fa-download mr-2"></i> Export Theme
+                                    </button>
+                                    <button id="importThemeBtn" class="btn btn-secondary">
+                                        <i class="fas fa-upload mr-2"></i> Import Theme
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Appearance Settings -->
+                    <section id="appearance-settings" class="card p-6 mb-6 hidden">
+                        <h3 class="text-xl font-semibold mb-4">Appearance Settings</h3>
+                        
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="font-medium">Animations</h4>
+                                    <p class="text-sm text-text-secondary">Enable interface animations and transitions</p>
+                                </div>
+                                <label class="form-switch">
+                                    <input type="checkbox" id="animationsToggle" class="switch-toggle" checked>
+                                    <span class="switch-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="font-medium">Glow Effects</h4>
+                                    <p class="text-sm text-text-secondary">Enable glow effects throughout the interface</p>
+                                </div>
+                                <label class="form-switch">
+                                    <input type="checkbox" id="glowEffectsToggle" class="switch-toggle" checked>
+                                    <span class="switch-slider"></span>
+                                </label>
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="font-medium">Glass Effects</h4>
+                                    <p class="text-sm text-text-secondary">Enable glass blur effects for cards and modals</p>
+                                </div>
+                                <label class="form-switch">
+                                    <input type="checkbox" id="glassEffectsToggle" class="switch-toggle" checked>
+                                    <span class="switch-slider"></span>
+                                </label>
+                            </div>
+
+                            <div>
+                                <label for="blurSlider" class="block text-sm font-medium mb-2">Glass Blur Intensity</label>
+                                <input type="range" min="0" max="20" value="10" class="w-full h-2 bg-bg-tertiary rounded-lg appearance-none cursor-pointer" id="blurSlider">
+                                <div class="flex justify-between text-xs text-text-secondary mt-1">
+                                    <span>None</span>
+                                    <span>Medium</span>
+                                    <span>High</span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Data Settings -->
+                    <section id="data-settings" class="card p-6 mb-6 hidden">
+                        <h3 class="text-xl font-semibold mb-4">Data Management</h3>
+                        
+                        <div class="space-y-6">
+                            <div>
+                                <h4 class="font-medium mb-2">Export Data</h4>
+                                <p class="text-sm text-text-secondary mb-3">Export all your project and task data</p>
+                                <button id="exportDataBtn" class="btn btn-primary">
+                                    <i class="fas fa-download mr-2"></i> Export Data
+                                </button>
+                            </div>
+                            
+                            <div>
+                                <h4 class="font-medium mb-2">Import Data</h4>
+                                <p class="text-sm text-text-secondary mb-3">Import project and task data from a backup file</p>
+                                <label for="importDataInput" class="btn btn-secondary">
+                                    <i class="fas fa-upload mr-2"></i> Import Data
+                                </label>
+                                <input type="file" id="importDataInput" class="hidden" accept=".json">
+                            </div>
+                            
+                            <div>
+                                <h4 class="font-medium mb-2">Clear Data</h4>
+                                <p class="text-sm text-text-secondary mb-3">Delete all application data. This action cannot be undone.</p>
+                                <button id="clearDataBtn" class="btn btn-danger">
+                                    <i class="fas fa-trash-alt mr-2"></i> Clear All Data
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Notification Settings -->
+                    <section id="notifications-settings" class="card p-6 mb-6 hidden">
+                        <h3 class="text-xl font-semibold mb-4">Notification Settings</h3>
+                        
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="font-medium">Browser Notifications</h4>
+                                    <p class="text-sm text-text-secondary">Show desktop notifications for important events</p>
+                                </div>
+                                <label class="form-switch">
+                                    <input type="checkbox" id="browserNotificationsToggle" class="switch-toggle">
+                                    <span class="switch-slider"></span>
+                                </label>
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="font-medium">In-app Notifications</h4>
+                                    <p class="text-sm text-text-secondary">Show notifications within the application</p>
+                                </div>
+                                <label class="form-switch">
+                                    <input type="checkbox" id="inAppNotificationsToggle" class="switch-toggle" checked>
+                                    <span class="switch-slider"></span>
+                                </label>
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="font-medium">Sound Effects</h4>
+                                    <p class="text-sm text-text-secondary">Play sound effects for notifications</p>
+                                </div>
+                                <label class="form-switch">
+                                    <input type="checkbox" id="soundEffectsToggle" class="switch-toggle">
+                                    <span class="switch-slider"></span>
+                                </label>
+                            </div>
+                            
+                            <div>
+                                <h4 class="font-medium mb-2">Notification Types</h4>
+                                <div class="space-y-2 mt-3">
+                                    <div class="flex items-center">
+                                        <input type="checkbox" id="notifyTaskDue" class="form-check-input mr-2" checked>
+                                        <label for="notifyTaskDue" class="text-sm">Task due date approaching</label>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <input type="checkbox" id="notifyTaskStatus" class="form-check-input mr-2" checked>
+                                        <label for="notifyTaskStatus" class="text-sm">Task status changes</label>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <input type="checkbox" id="notifyProjectUpdates" class="form-check-input mr-2" checked>
+                                        <label for="notifyProjectUpdates" class="text-sm">Project updates</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <!-- About Section -->
+                    <section id="about" class="card p-6 mb-6 hidden">
+                        <h3 class="text-xl font-semibold mb-4">About Project-TMS</h3>
+                        
+                        <div class="space-y-4">
+                            <div class="text-center mb-6">
+                                <div class="inline-block p-4 rounded-full bg-accent-primary bg-opacity-10 mb-3">
+                                    <i class="fas fa-tasks text-3xl text-accent-primary"></i>
+                                </div>
+                                <h4 class="text-lg font-bold">Project-TMS</h4>
+                                <p class="text-sm text-text-secondary">Version 1.0.0</p>
+                            </div>
+                            
+                            <p>
+                                Project-TMS is a modern, feature-rich task management system built with HTML, CSS, and JavaScript.
+                                It helps teams track projects, manage tasks, monitor time, and collaborate effectively - all within
+                                a beautiful and responsive interface.
+                            </p>
+                            
+                            <div class="space-y-2">
+                                <h4 class="font-medium">Features</h4>
+                                <ul class="list-disc pl-5 space-y-1 text-sm">
+                                    <li>Project Management</li>
+                                    <li>Kanban Board</li>
+                                    <li>Time Tracking</li>
+                                    <li>Task Details and Notes</li>
+                                    <li>Analytics</li>
+                                    <li>Custom Themes</li>
+                                    <li>Responsive Design</li>
+                                </ul>
+                            </div>
+                            
+                            <div>
+                                <h4 class="font-medium mb-2">Credits</h4>
+                                <p class="text-sm">
+                                    Built with ❤️ using modern web technologies.
+                                </p>
+                                <div class="flex space-x-4 mt-3">
+                                    <a href="#" class="text-accent-primary hover:text-accent-secondary">
+                                        <i class="fab fa-github mr-1"></i> GitHub
+                                    </a>
+                                    <a href="#" class="text-accent-primary hover:text-accent-secondary">
+                                        <i class="fas fa-book mr-1"></i> Documentation
+                                    </a>
+                                    <a href="#" class="text-accent-primary hover:text-accent-secondary">
+                                        <i class="fas fa-bug mr-1"></i> Report Issue
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+            
+            <!-- Save Button -->
+            <div class="flex justify-end">
+                <button id="saveSettingsBtn" class="btn btn-primary glow-primary px-6 py-2 rounded-md flex items-center">
+                    <i class="fas fa-save mr-2"></i> Save Changes
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="py-4 px-6 border-t border-border-color mt-auto">
+        <div class="container mx-auto text-center text-sm">
+            &copy; 2023 Project-TMS. All rights reserved.
+        </div>
+    </footer>
+
+    <!-- Clear Data Confirmation Modal -->
+    <div id="clearDataModal" class="modal-container">
+        <div class="modal-content max-w-md">
+            <div class="modal-header">
+                <h2 class="modal-title">Clear All Data</h2>
+                <button id="closeClearDataModalBtn" class="modal-close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center">
+                    <div class="inline-block p-3 rounded-full bg-danger-color bg-opacity-10 mb-4">
+                        <i class="fas fa-exclamation-triangle text-3xl text-danger-color"></i>
+                    </div>
+                    <h3 class="text-lg font-bold mb-2">Warning: This action cannot be undone</h3>
+                    <p class="mb-4">
+                        You are about to delete all projects, tasks, and settings data. This data cannot be recovered
+                        unless you have a backup.
+                    </p>
+                    <div class="form-check mb-4 text-left">
+                        <input type="checkbox" id="confirmClearData" class="form-check-input mr-2">
+                        <label for="confirmClearData" class="text-sm">I understand that all data will be permanently deleted</label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelClearDataBtn" class="btn btn-secondary">Cancel</button>
+                <button id="confirmClearDataBtn" class="btn btn-danger glow-danger" disabled>Delete All Data</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Theme Import Modal -->
+    <div id="importThemeModal" class="modal-container">
+        <div class="modal-content max-w-md">
+            <div class="modal-header">
+                <h2 class="modal-title">Import Theme</h2>
+                <button id="closeImportThemeModalBtn" class="modal-close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-4">
+                    Import a custom theme configuration. The file should be in the correct format (.json).
+                </p>
+                <div class="form-row">
+                    <label for="themeFileInput" class="form-label">Select Theme File</label>
+                    <input type="file" id="themeFileInput" class="form-control" accept=".json">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelImportThemeBtn" class="btn btn-secondary">Cancel</button>
+                <button id="confirmImportThemeBtn" class="btn btn-primary">Import</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <!-- Utility libraries -->
+    <script src="../js/utils/event-bus.js"></script>
+    <script src="../js/utils/date-formatter.js"></script>
+    
+    <!-- Core functionality -->
+    <script src="../js/core/storage.js"></script>
+    
+    <!-- UI Components -->
+    <script src="../js/components/ui/notifications.js"></script>
+    <script src="../js/components/ui/theme-switcher.js"></script>
+    
+    <!-- Settings Manager -->
+    <script src="../js/features/settings/settings-manager.js"></script>
+    
+    <!-- Main App -->
+    <script src="../js/core/app.js"></script>
+</body>
+</html>

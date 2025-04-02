@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project-TMS - Task Management System</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Custom styles -->
+    <link rel="stylesheet" href="../css/main.css">
+</head>
+<body class="bg-gray-50 dark:bg-gray-900">
+    <!-- Header -->
+    <header class="sticky top-0 z-10 py-4 px-6">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold bg-gradient-to-r from-purple-400 to-blue-500 bg-clip-text text-transparent">Project-TMS</h1>
+            <nav class="flex items-center space-x-4">
+                <a href="index.html" class="active">Dashboard</a>
+                <a href="analytics.html">Analytics</a>
+                <a href="settings.html">Settings</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto py-6 px-4">
+        <!-- Project selection -->
+        <div class="mb-8 flex flex-wrap md:flex-nowrap justify-between items-center gap-4">
+            <div class="w-full md:w-1/2">
+                <label for="projectSelect" class="block text-sm font-medium mb-1">Select Project</label>
+                <div class="flex gap-2">
+                    <select id="projectSelect" class="form-control">
+                        <option value="">Select a project</option>
+                    </select>
+                    <button id="newProjectBtn" class="btn btn-primary glow-primary">
+                        <i class="fas fa-plus mr-2"></i>New
+                    </button>
+                </div>
+            </div>
+            <div class="flex space-x-3">
+                <button id="editProjectBtn" class="btn btn-secondary px-3 py-2 rounded-md flex items-center disabled:opacity-50 transition-all">
+                    <i class="fas fa-edit mr-2"></i>
+                    Edit
+                </button>
+                <button id="deleteProjectBtn" class="btn btn-danger px-3 py-2 rounded-md flex items-center disabled:opacity-50 transition-all">
+                    <i class="fas fa-trash-alt mr-2"></i>
+                    Delete
+                </button>
+            </div>
+        </div>
+
+        <!-- Project details -->
+        <div id="projectDetails" class="hidden mb-8">
+            <div class="card p-6 mb-6">
+                <div class="flex flex-wrap md:flex-nowrap">
+                    <div class="w-full md:w-2/3 md:pr-6">
+                        <h2 id="projectTitle" class="text-2xl font-bold mb-2">Project Title</h2>
+                        <p id="projectDescription" class="mb-4">Project description goes here.</p>
+                        <div class="flex flex-wrap gap-6">
+                            <div class="mb-4">
+                                <span class="block text-sm font-medium text-text-secondary">Start Date</span>
+                                <span id="projectStartDate">01/01/2023</span>
+                            </div>
+                            <div class="mb-4">
+                                <span class="block text-sm font-medium text-text-secondary">End Date</span>
+                                <span id="projectEndDate">31/12/2023</span>
+                            </div>
+                            <div class="mb-4">
+                                <span class="block text-sm font-medium text-text-secondary">Status</span>
+                                <span id="projectStatus" class="px-2 py-1 rounded-full text-xs bg-accent-primary text-white">Active</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Project Progress & Metrics -->
+                    <div class="w-full md:w-1/3 mt-4 md:mt-0 md:border-l border-border-color md:pl-6">
+                        <h3 class="text-lg font-semibold mb-3">Project Progress</h3>
+                        
+                        <!-- Progress Chart -->
+                        <div class="mb-4">
+                            <div class="flex justify-between mb-1">
+                                <span class="text-sm">Completion</span>
+                                <span id="projectCompletionPercentage" class="text-sm font-semibold text-success-color">0%</span>
+                            </div>
+                            <div class="w-full bg-bg-tertiary rounded-full h-2.5">
+                                <div id="projectProgressBar" class="progress-bar bg-success-color h-2.5 rounded-full" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Task Status Breakdown -->
+                        <div class="grid grid-cols-2 gap-2 mb-4">
+                            <div class="card p-2 text-center">
+                                <div id="todoCount" class="text-xl font-bold">0</div>
+                                <div class="text-xs">To Do</div>
+                            </div>
+                            <div class="card p-2 text-center">
+                                <div id="inProgressCount" class="text-xl font-bold text-accent-primary">0</div>
+                                <div class="text-xs">In Progress</div>
+                            </div>
+                            <div class="card p-2 text-center">
+                                <div id="reviewCount" class="text-xl font-bold text-accent-secondary">0</div>
+                                <div class="text-xs">Review</div>
+                            </div>
+                            <div class="card p-2 text-center">
+                                <div id="doneCount" class="text-xl font-bold text-success-color">0</div>
+                                <div class="text-xs">Done</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Time Metrics -->
+                        <div class="mb-3">
+                            <div class="text-sm font-medium mb-1">Total Time Spent</div>
+                            <div id="totalTimeSpent" class="text-lg font-semibold">0h 0m</div>
+                        </div>
+                        
+                        <div>
+                            <div class="text-sm font-medium mb-1">Average Task Completion</div>
+                            <div id="avgTaskCompletion" class="text-lg font-semibold">0h 0m</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Task management -->
+        <div id="taskManagement" class="hidden w-full">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Tasks</h2>
+                <button id="newTaskBtn" class="btn btn-primary glow-primary px-3 py-2 rounded-md flex items-center">
+                    <i class="fas fa-plus mr-2"></i>
+                    New Task
+                </button>
+            </div>
+
+            <!-- Kanban board -->
+            <div class="kanban-container w-full">
+                <!-- Todo column -->
+                <div class="kanban-column">
+                    <div class="kanban-column-header" data-status="todo">
+                        <div class="flex items-center">
+                            <span class="w-3 h-3 bg-status-todo-color rounded-full mr-2 status-indicator"></span>
+                            <span>To Do</span>
+                        </div>
+                        <span id="todoCountBadge" class="status-count todo-count">0</span>
+                    </div>
+                    <div id="todoTasks" class="kanban-column-content tasks-container">
+                        <!-- Tasks will be inserted here -->
+                    </div>
+                </div>
+
+                <!-- In Progress column -->
+                <div class="kanban-column">
+                    <div class="kanban-column-header" data-status="in-progress">
+                        <div class="flex items-center">
+                            <span class="w-3 h-3 bg-status-in-progress-color rounded-full mr-2 status-indicator"></span>
+                            <span>In Progress</span>
+                        </div>
+                        <span id="inProgressCountBadge" class="status-count in-progress-count">0</span>
+                    </div>
+                    <div id="inProgressTasks" class="kanban-column-content tasks-container">
+                        <!-- Tasks will be inserted here -->
+                    </div>
+                </div>
+
+                <!-- Review column -->
+                <div class="kanban-column">
+                    <div class="kanban-column-header" data-status="review">
+                        <div class="flex items-center">
+                            <span class="w-3 h-3 bg-status-review-color rounded-full mr-2 status-indicator"></span>
+                            <span>Review</span>
+                        </div>
+                        <span id="reviewCountBadge" class="status-count review-count">0</span>
+                    </div>
+                    <div id="reviewTasks" class="kanban-column-content tasks-container">
+                        <!-- Tasks will be inserted here -->
+                    </div>
+                </div>
+
+                <!-- Done column -->
+                <div class="kanban-column">
+                    <div class="kanban-column-header" data-status="done">
+                        <div class="flex items-center">
+                            <span class="w-3 h-3 bg-status-done-color rounded-full mr-2 status-indicator"></span>
+                            <span>Done</span>
+                        </div>
+                        <span id="doneCountBadge" class="status-count done-count">0</span>
+                    </div>
+                    <div id="doneTasks" class="kanban-column-content tasks-container">
+                        <!-- Tasks will be inserted here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- No projects placeholder -->
+        <div id="noProjectsPlaceholder" class="text-center py-12">
+            <div class="inline-block p-6 glass-effect rounded-xl mb-6">
+                <i class="fas fa-project-diagram text-6xl text-gray-400 mb-4"></i>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">No Projects Yet</h3>
+            <p class="mb-4">Create your first project to get started</p>
+            <button id="createFirstProjectBtn" class="btn btn-primary glow-primary px-4 py-2 rounded-md">
+                <i class="fas fa-plus mr-2"></i> Create Project
+            </button>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="py-4 px-6 border-t border-border-color mt-auto">
+        <div class="container mx-auto text-center text-sm">
+            &copy; 2023 Project-TMS. All rights reserved.
+        </div>
+    </footer>
+
+    <!-- Modals -->
+    <!-- New/Edit Project Modal -->
+    <div id="projectModal" class="modal-container">
+        <div class="modal-content p-6 max-w-md">
+            <div class="modal-header">
+                <h2 id="projectModalTitle" class="modal-title">New Project</h2>
+                <button id="closeProjectModalBtn" class="modal-close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="projectForm" class="modal-body">
+                <input type="hidden" id="projectId">
+                <div class="form-row">
+                    <label for="projectNameInput" class="form-label required">Project Name</label>
+                    <input type="text" id="projectNameInput" class="form-control" required>
+                </div>
+                <div class="form-row">
+                    <label for="projectDescInput" class="form-label">Description</label>
+                    <textarea id="projectDescInput" rows="3" class="form-control"></textarea>
+                </div>
+                <div class="form-grid">
+                    <div class="form-row">
+                        <label for="projectStartInput" class="form-label">Start Date</label>
+                        <input type="date" id="projectStartInput" class="form-control">
+                    </div>
+                    <div class="form-row">
+                        <label for="projectEndInput" class="form-label">End Date</label>
+                        <input type="date" id="projectEndInput" class="form-control">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <label for="projectStatusInput" class="form-label">Status</label>
+                    <select id="projectStatusInput" class="form-control">
+                        <option value="active">Active</option>
+                        <option value="on-hold">On Hold</option>
+                        <option value="completed">Completed</option>
+                        <option value="archived">Archived</option>
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="cancelProjectBtn" class="btn btn-secondary">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- New/Edit Task Modal -->
+    <div id="taskModal" class="modal-container">
+        <div class="modal-content max-w-2xl">
+            <div class="modal-header">
+                <h2 id="taskModalTitle" class="modal-title">New Task</h2>
+                <button id="closeTaskModalBtn" class="modal-close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="taskForm" class="modal-body">
+                <input type="hidden" id="taskId">
+                <div class="form-row">
+                    <label for="taskTitleInput" class="form-label required">Title</label>
+                    <input type="text" id="taskTitleInput" class="form-control" required>
+                </div>
+                <div class="form-row">
+                    <label for="taskDescInput" class="form-label">Description</label>
+                    <textarea id="taskDescInput" rows="3" class="form-control"></textarea>
+                </div>
+                <div class="form-grid">
+                    <div class="form-row">
+                        <label for="taskStatusInput" class="form-label">Status</label>
+                        <select id="taskStatusInput" class="form-control">
+                            <option value="todo">To Do</option>
+                            <option value="in-progress">In Progress</option>
+                            <option value="review">Review</option>
+                            <option value="done">Done</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <label for="taskPriorityInput" class="form-label">Priority</label>
+                        <select id="taskPriorityInput" class="form-control">
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-row">
+                        <label for="taskDueDateInput" class="form-label">Due Date</label>
+                        <input type="date" id="taskDueDateInput" class="form-control">
+                    </div>
+                    <div class="form-row">
+                        <label for="taskAssigneeInput" class="form-label">Assignee</label>
+                        <input type="text" id="taskAssigneeInput" class="form-control" placeholder="Assignee name">
+                    </div>
+                </div>
+                <div id="taskTimeTrackingSection" class="form-row" style="display: none;">
+                    <label class="form-label">Time Tracking</label>
+                    <div id="taskTimeTrackingInfo" class="time-tracking-info">
+                        No time tracking data available
+                    </div>
+                </div>
+                <div class="form-row">
+                    <label for="taskNotesInput" class="form-label">Notes</label>
+                    <textarea id="taskNotesInput" rows="2" class="form-control" placeholder="Add any additional notes here..."></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="cancelTaskBtn" class="btn btn-secondary">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- View Task Modal -->
+    <div id="viewTaskModal" class="modal-container">
+        <div class="modal-content max-w-md">
+            <div class="modal-header">
+                <h2 id="viewTaskTitle" class="modal-title">Task Title</h2>
+                <div class="flex items-center">
+                    <button id="editTaskBtn" class="btn-icon btn-secondary mr-2" title="Edit Task">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button id="closeViewTaskBtn" class="modal-close-btn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div class="task-view-section">
+                    <div class="task-view-label">Status</div>
+                    <div class="flex items-center mt-1">
+                        <select id="viewTaskStatus" class="form-control">
+                            <option value="todo">To Do</option>
+                            <option value="in-progress">In Progress</option>
+                            <option value="review">Review</option>
+                            <option value="done">Done</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="task-view-section">
+                    <div class="task-view-label">Description</div>
+                    <div id="viewTaskDesc" class="task-view-content">Task description goes here.</div>
+                </div>
+                <div class="form-grid">
+                    <div class="task-view-section">
+                        <div class="task-view-label">Priority</div>
+                        <div id="viewTaskPriority" class="task-view-content">Medium</div>
+                    </div>
+                    <div class="task-view-section">
+                        <div class="task-view-label">Due Date</div>
+                        <div id="viewTaskDueDate" class="task-view-content">Not set</div>
+                    </div>
+                </div>
+                <div class="task-view-section">
+                    <div class="task-view-label">Assignee</div>
+                    <div id="viewTaskAssignee" class="task-view-content">Unassigned</div>
+                </div>
+                
+                <!-- Time Tracking Info -->
+                <div class="task-view-section">
+                    <div class="task-view-label">Time Tracking</div>
+                    <div id="viewTaskTimeInfo" class="task-view-content">
+                        No time tracking data available
+                    </div>
+                    
+                    <!-- Time Tracking Controls (only for In Progress tasks) -->
+                    <div id="viewTaskTimeControls" class="mt-2">
+                        <!-- Will be populated dynamically based on task status -->
+                    </div>
+                </div>
+                <div class="task-view-section">
+                    <div class="task-view-label">Notes</div>
+                    <div id="viewTaskNotes" class="task-view-content task-notes-container">
+                        No notes yet.
+                    </div>
+                </div>
+                <div class="add-note-form">
+                    <textarea id="newTaskNote" class="form-control add-note-input" placeholder="Add a note..."></textarea>
+                    <button id="addTaskNoteBtn" class="btn btn-primary add-note-btn">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal-container">
+        <div class="modal-content max-w-md">
+            <div class="modal-header">
+                <h2 class="modal-title">Confirm Delete</h2>
+                <button id="closeDeleteModalBtn" class="modal-close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="deleteMessage" class="mb-6">Are you sure you want to delete this item? This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelDeleteBtn" class="btn btn-secondary">Cancel</button>
+                <button id="confirmDeleteBtn" class="btn btn-danger glow-danger">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <!-- Utility libraries -->
+    <script src="../js/utils/event-bus.js"></script>
+    <script src="../js/utils/date-formatter.js"></script>
+    
+    <!-- Core functionality -->
+    <script src="../js/core/storage.js"></script>
+    
+    <!-- UI Components -->
+    <script src="../js/components/ui/notifications.js"></script>
+    <script src="../js/components/ui/theme-switcher.js"></script>
+    <script src="../js/components/kanban/drag-drop.js"></script>
+    
+    <!-- Features -->
+    <script src="../js/features/projects/project-manager.js"></script>
+    <script src="../js/features/tasks/task-card.js"></script>
+    <script src="../js/features/tasks/task-manager.js"></script>
+    <script src="../js/features/time-tracking/time-tracker.js"></script>
+    
+    <!-- Main App -->
+    <script src="../js/core/app.js"></script>
+</body>
+</html>
