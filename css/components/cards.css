@@ -1,0 +1,240 @@
+/**
+ * Card Component Styles for Project-TMS
+ */
+
+/* Base card */
+.card {
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius-md);
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: 1px solid var(--border-color);
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+/* Card sizes */
+.card-sm {
+    border-radius: var(--border-radius-sm);
+}
+
+.card-lg {
+    border-radius: var(--border-radius-lg);
+}
+
+/* Card with header, body, footer structure */
+.card-header {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--bg-secondary);
+}
+
+.card-body {
+    padding: 1rem;
+}
+
+.card-footer {
+    padding: 1rem;
+    border-top: 1px solid var(--border-color);
+    background-color: var(--bg-secondary);
+}
+
+/* Project card specific styles */
+.project-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.project-card .card-body {
+    flex: 1;
+}
+
+.project-card .project-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.project-card .project-description {
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.project-card .project-meta {
+    display: flex;
+    justify-content: space-between;
+    margin-top: auto;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+/* Stat cards */
+.stat-card {
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-card .stat-title {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.stat-card .stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.stat-card .stat-change {
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+}
+
+.stat-card .stat-change.positive {
+    color: var(--success-color);
+}
+
+.stat-card .stat-change.negative {
+    color: var(--danger-color);
+}
+
+/* Card with icon */
+.icon-card {
+    display: flex;
+    align-items: flex-start;
+}
+
+.icon-card .icon-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 9999px;
+    margin-right: 1rem;
+    background-color: var(--bg-tertiary);
+    flex-shrink: 0;
+}
+
+.icon-card .icon-content {
+    flex: 1;
+}
+
+/* Card grid */
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+@media (max-width: 640px) {
+    .card-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Theme-specific card styling */
+.theme-digital-void .card,
+.theme-neo-synth .card,
+.theme-aurora .card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.theme-digital-void .card:hover {
+    box-shadow: 0 8px 20px rgba(0, 255, 149, 0.2);
+    border-color: rgba(99, 102, 241, 0.4);
+}
+
+.theme-neo-synth .card:hover {
+    box-shadow: 0 8px 20px rgba(1, 205, 254, 0.3);
+    border-color: rgba(1, 205, 254, 0.5);
+}
+
+.theme-aurora .card:hover {
+    box-shadow: 0 8px 20px rgba(110, 231, 183, 0.3);
+    border-color: rgba(110, 231, 183, 0.5);
+}
+
+/* Status cards */
+.status-card {
+    position: relative;
+    padding-left: 1rem;
+}
+
+.status-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 4px;
+    border-radius: var(--border-radius-md) 0 0 var(--border-radius-md);
+}
+
+.status-card.status-active::before {
+    background-color: var(--success-color);
+}
+
+.status-card.status-pending::before {
+    background-color: var(--warning-color);
+}
+
+.status-card.status-completed::before {
+    background-color: var(--accent-primary);
+}
+
+.status-card.status-canceled::before {
+    background-color: var(--danger-color);
+}
+
+/* Progress card */
+.progress-card .progress-container {
+    height: 0.5rem;
+    background-color: var(--bg-tertiary);
+    border-radius: 9999px;
+    overflow: hidden;
+    margin: 0.5rem 0;
+}
+
+.progress-card .progress-bar {
+    height: 100%;
+    border-radius: 9999px;
+    background-color: var(--accent-primary);
+    transition: width 0.3s ease;
+}
+
+.progress-card .progress-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+/* Card link */
+a.card-link {
+    color: inherit;
+    text-decoration: none;
+    display: block;
+}
+
+a.card-link:hover .card {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+a.card-link:active .card {
+    transform: translateY(0);
+}
