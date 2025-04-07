@@ -1,120 +1,261 @@
 /**
- * Enhanced Storage Manager for Project-TMS
- * Handles data persistence with improved error handling and data integrity
+ * Enhanced Client Storage Manager for Project-TMS
+ * Handles data persistence using server-based file storage
  */
 class StorageManager {
-    static STORAGE_KEYS = {
-        PROJECTS: 'projects',
-        TASKS: 'tasks',
-        NOTES: 'task_notes',
-        FILES: 'task_files',
-        SETTINGS: 'settings',
-        LAST_SYNC: 'last_sync'
+    static API_URL = 'http://localhost:3000/api';
+    static FILE_NAMES = {
+        PROJECTS: 'projects.json',
+        TASKS: 'tasks.json',
+        SETTINGS: 'settings.json',
+        LAST_SYNC: 'last_sync.json'
     };
-
+    
     /**
-     * Initialize storage and perform any necessary migrations
+     * Initialize storage and perform any necessary setup
      */
-    static initialize() {
+    static async initialize() {
         try {
             // Check for data integrity
-            this._validateDataStructure();
+            await this._validateDataStructure();
             
             // Emit event that storage is ready
             if (window.EventBus) {
                 EventBus.emit('storage:ready', true);
             }
             
+            console.log('Storage initialized successfully');
             return true;
         } catch (error) {
             console.error('Error initializing storage:', error);
-            return false;
+            
+            // Attempt recovery by initializing with default values
+            try {
+                await this._initializeDefaultData();
+                return true;
+            } catch (recoveryError) {
+                console.error('Recovery failed:', recoveryError);
+                
+                // If server is unavailable, show an error message
+                if (window.NotificationManager) {
+                    NotificationManager.error(
+                        'Could not connect to the data server. Data will not be saved.',
+                        'Storage Error'
+                    );
+                }
+                
+                return false;
+            }
         }
     }
-
+    
     /**
      * Validate and repair data structure if needed
      * @private
      */
-    static _validateDataStructure() {
-        // Ensure all required storage keys exist
-        Object.values(this.STORAGE_KEYS).forEach(key => {
-            if (!localStorage.getItem(key)) {
-                // Initialize with default values
-                switch (key) {
-                    case this.STORAGE_KEYS.PROJECTS:
-                    case this.STORAGE_KEYS.TASKS:
-                        localStorage.setItem(key, '[]');
-                        break;
-                    case this.STORAGE_KEYS.FILES:
-                    case this.STORAGE_KEYS.SETTINGS:
-                        localStorage.setItem(key, '{}');
-                        break;
-                    case this.STORAGE_KEYS.LAST_SYNC:
-                        localStorage.setItem(key, new Date().toISOString());
-                        break;
-                }
+    static async _validateDataStructure() {
+        try {
+            // Fetch and verify each file
+            const projects = await this._readFile('PROJECTS');
+            const tasks = await this._readFile('TASKS');
+            const settings = await this._readFile('SETTINGS');
+            
+            // Verify structures
+            if (!Array.isArray(projects)) {
+                await this._writeFile('PROJECTS', []);
             }
-        });
+            
+            if (!Array.isArray(tasks)) {
+                await this._writeFile('TASKS', []);
+            }
+            
+            if (typeof settings !== 'object' || settings === null) {
+                await this._writeFile('SETTINGS', {});
+            }
+            
+            return true;
+        } catch (error) {
+            console.error('Error validating data structure:', error);
+            throw error;
+        }
     }
-
+    
     /**
-     * Safe parse method with error handling
+     * Initialize with default data
+     * @private
+     */
+    static async _initializeDefaultData() {
+        try {
+            // Create default files
+            await this._writeFile('PROJECTS', []);
+            await this._writeFile('TASKS', []);
+            await this._writeFile('SETTINGS', {});
+            await this._writeFile('LAST_SYNC', { lastSync: new Date().toISOString() });
+            
+            console.log('Initialized default data');
+            return true;
+        } catch (error) {
+            console.error('Error initializing default data:', error);
+            throw error;
+        }
+    }
+    
+    /**
+     * Check if the server is available
+     * @returns {Promise<boolean>} True if server is available
+     */
+    static async isServerAvailable() {
+        try {
+            const response = await fetch(`${this.API_URL}/files`);
+            return response.ok;
+        } catch (error) {
+            return false;
+        }
+    }
+    
+    /**
+     * Read data from file via API
      * @private
      * @param {string} key - Storage key
-     * @param {any} defaultValue - Default value if parsing fails
-     * @returns {any} Parsed data or default value
+     * @param {any} defaultValue - Default value if file doesn't exist or parsing fails
+     * @returns {Promise<any>} Parsed data or default value
      */
-    static _safeParse(key, defaultValue) {
+    static async _readFile(key, defaultValue = null) {
         try {
-            const data = localStorage.getItem(key);
+            const filename = this.FILE_NAMES[key];
+            
+            if (!filename) {
+                console.error(`Invalid storage key: ${key}`);
+                return defaultValue !== null ? defaultValue : 
+                       (key === 'PROJECTS' || key === 'TASKS' ? [] : {});
+            }
+            
+            try {
+                const response = await fetch(`${this.API_URL}/files/${filename}`);
+                
+                if (!response.ok) {
+                    throw new Error(`API returned ${response.status}: ${response.statusText}`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error(`Error reading ${filename}:`, error);
+                
+                if (error.message && error.message.includes('Failed to fetch')) {
+                    // Connection issue - try localStorage fallback
+                    return this._readFromLocalStorage(key, defaultValue);
+                }
+                
+                return defaultValue !== null ? defaultValue : 
+                       (key === 'PROJECTS' || key === 'TASKS' ? [] : {});
+            }
+        } catch (error) {
+            console.error(`Error in _readFile for ${key}:`, error);
+            return defaultValue !== null ? defaultValue : 
+                   (key === 'PROJECTS' || key === 'TASKS' ? [] : {});
+        }
+    }
+    
+    /**
+     * Write data to file via API
+     * @private
+     * @param {string} key - Storage key
+     * @param {any} data - Data to save
+     * @returns {Promise<boolean>} Success status
+     */
+    static async _writeFile(key, data) {
+        try {
+            const filename = this.FILE_NAMES[key];
+            
+            if (!filename) {
+                console.error(`Invalid storage key: ${key}`);
+                return false;
+            }
+            
+            try {
+                const response = await fetch(`${this.API_URL}/files/${filename}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`API returned ${response.status}: ${response.statusText}`);
+                }
+                
+                // Also save to localStorage as backup
+                this._writeToLocalStorage(key, data);
+                
+                return true;
+            } catch (error) {
+                console.error(`Error writing ${filename}:`, error);
+                
+                if (error.message && error.message.includes('Failed to fetch')) {
+                    // Connection issue - try localStorage fallback
+                    return this._writeToLocalStorage(key, data);
+                }
+                
+                return false;
+            }
+        } catch (error) {
+            console.error(`Error in _writeFile for ${key}:`, error);
+            
+            // Try localStorage as a last resort
+            return this._writeToLocalStorage(key, data);
+        }
+    }
+    
+    /**
+     * Read from localStorage fallback
+     * @private
+     * @param {string} key - Storage key
+     * @param {any} defaultValue - Default value if not found
+     * @returns {any} Data or default value
+     */
+    static _readFromLocalStorage(key, defaultValue) {
+        try {
+            const data = localStorage.getItem(`tms_${key.toLowerCase()}`);
             return data ? JSON.parse(data) : defaultValue;
         } catch (error) {
-            console.error(`Error parsing ${key} from storage:`, error);
+            console.error(`Error reading from localStorage for ${key}:`, error);
             return defaultValue;
         }
     }
-
+    
     /**
-     * Safe stringify and save method with error handling
+     * Write to localStorage fallback
      * @private
      * @param {string} key - Storage key
      * @param {any} data - Data to save
      * @returns {boolean} Success status
      */
-    static _safeSave(key, data) {
+    static _writeToLocalStorage(key, data) {
         try {
-            localStorage.setItem(key, JSON.stringify(data));
+            localStorage.setItem(`tms_${key.toLowerCase()}`, JSON.stringify(data));
+            console.warn(`Saved ${key} to localStorage as fallback`);
             return true;
         } catch (error) {
-            console.error(`Error saving ${key} to storage:`, error);
-            
-            // Try to handle storage quota exceeded
-            if (error instanceof DOMException && error.name === 'QuotaExceededError') {
-                // Emit storage quota exceeded event
-                if (window.EventBus) {
-                    EventBus.emit('storage:quotaExceeded', { key, dataSize: JSON.stringify(data).length });
-                }
-            }
-            
+            console.error(`Error writing to localStorage for ${key}:`, error);
             return false;
         }
     }
-
+    
     /**
      * Project Management
      */
-    static getProjects() {
-        return this._safeParse(this.STORAGE_KEYS.PROJECTS, []);
+    static async getProjects() {
+        return await this._readFile('PROJECTS', []);
     }
-
-    static getProjectById(projectId) {
-        const projects = this.getProjects();
+    
+    static async getProjectById(projectId) {
+        const projects = await this.getProjects();
         return projects.find(p => p.id === projectId) || null;
     }
-
-    static addProject(project) {
-        const projects = this.getProjects();
+    
+    static async addProject(project) {
+        const projects = await this.getProjects();
         const newProject = {
             ...project,
             id: Date.now().toString(),
@@ -123,7 +264,7 @@ class StorageManager {
         };
         
         projects.push(newProject);
-        const success = this._safeSave(this.STORAGE_KEYS.PROJECTS, projects);
+        const success = await this._writeFile('PROJECTS', projects);
         
         if (success && window.EventBus) {
             EventBus.emit('project:created', newProject);
@@ -131,9 +272,9 @@ class StorageManager {
         
         return success ? newProject : null;
     }
-
-    static updateProject(projectId, updates) {
-        const projects = this.getProjects();
+    
+    static async updateProject(projectId, updates) {
+        const projects = await this.getProjects();
         const index = projects.findIndex(p => p.id === projectId);
         
         if (index !== -1) {
@@ -144,7 +285,7 @@ class StorageManager {
             };
             
             projects[index] = updatedProject;
-            const success = this._safeSave(this.STORAGE_KEYS.PROJECTS, projects);
+            const success = await this._writeFile('PROJECTS', projects);
             
             if (success && window.EventBus) {
                 EventBus.emit('project:updated', updatedProject);
@@ -155,18 +296,18 @@ class StorageManager {
         
         return null;
     }
-
-    static deleteProject(projectId) {
-        const projects = this.getProjects();
+    
+    static async deleteProject(projectId) {
+        const projects = await this.getProjects();
         const filteredProjects = projects.filter(p => p.id !== projectId);
         
         // Only proceed if we actually found and removed the project
         if (filteredProjects.length < projects.length) {
-            const success = this._safeSave(this.STORAGE_KEYS.PROJECTS, filteredProjects);
+            const success = await this._writeFile('PROJECTS', filteredProjects);
             
             if (success) {
-                // Delete associated tasks and files
-                this.deleteProjectTasks(projectId);
+                // Delete associated tasks
+                await this.deleteProjectTasks(projectId);
                 
                 if (window.EventBus) {
                     EventBus.emit('project:deleted', { projectId });
@@ -178,26 +319,26 @@ class StorageManager {
         
         return false;
     }
-
+    
     /**
      * Task Management
      */
-    static getTasks() {
-        return this._safeParse(this.STORAGE_KEYS.TASKS, []);
+    static async getTasks() {
+        return await this._readFile('TASKS', []);
     }
-
-    static getTaskById(taskId) {
-        const tasks = this.getTasks();
+    
+    static async getTaskById(taskId) {
+        const tasks = await this.getTasks();
         return tasks.find(t => t.id === taskId) || null;
     }
-
-    static getTasksByProject(projectId) {
-        const tasks = this.getTasks();
+    
+    static async getTasksByProject(projectId) {
+        const tasks = await this.getTasks();
         return tasks.filter(t => t.projectId === projectId);
     }
-
-    static addTask(task) {
-        const tasks = this.getTasks();
+    
+    static async addTask(task) {
+        const tasks = await this.getTasks();
         const newTask = {
             ...task,
             id: Date.now().toString(),
@@ -214,7 +355,7 @@ class StorageManager {
         };
         
         tasks.push(newTask);
-        const success = this._safeSave(this.STORAGE_KEYS.TASKS, tasks);
+        const success = await this._writeFile('TASKS', tasks);
         
         if (success && window.EventBus) {
             EventBus.emit('task:created', newTask);
@@ -222,9 +363,9 @@ class StorageManager {
         
         return success ? newTask : null;
     }
-
-    static updateTask(taskId, updates) {
-        const tasks = this.getTasks();
+    
+    static async updateTask(taskId, updates) {
+        const tasks = await this.getTasks();
         const index = tasks.findIndex(t => t.id === taskId);
         
         if (index !== -1) {
@@ -235,7 +376,7 @@ class StorageManager {
             };
             
             tasks[index] = updatedTask;
-            const success = this._safeSave(this.STORAGE_KEYS.TASKS, tasks);
+            const success = await this._writeFile('TASKS', tasks);
             
             if (success && window.EventBus) {
                 EventBus.emit('task:updated', updatedTask);
@@ -246,15 +387,15 @@ class StorageManager {
         
         return null;
     }
-
-    static deleteTask(taskId) {
-        const tasks = this.getTasks();
+    
+    static async deleteTask(taskId) {
+        const tasks = await this.getTasks();
         const task = tasks.find(t => t.id === taskId);
         
         if (!task) return false;
         
         const filteredTasks = tasks.filter(t => t.id !== taskId);
-        const success = this._safeSave(this.STORAGE_KEYS.TASKS, filteredTasks);
+        const success = await this._writeFile('TASKS', filteredTasks);
         
         if (success && window.EventBus) {
             EventBus.emit('task:deleted', { taskId, projectId: task.projectId });
@@ -262,13 +403,13 @@ class StorageManager {
         
         return success;
     }
-
-    static deleteProjectTasks(projectId) {
-        const tasks = this.getTasks();
+    
+    static async deleteProjectTasks(projectId) {
+        const tasks = await this.getTasks();
         const projectTasks = tasks.filter(t => t.projectId === projectId);
         const otherTasks = tasks.filter(t => t.projectId !== projectId);
         
-        const success = this._safeSave(this.STORAGE_KEYS.TASKS, otherTasks);
+        const success = await this._writeFile('TASKS', otherTasks);
         
         if (success && projectTasks.length > 0 && window.EventBus) {
             EventBus.emit('tasks:batchDeleted', { 
@@ -279,12 +420,12 @@ class StorageManager {
         
         return success;
     }
-
+    
     /**
      * Task Notes Management
      */
-    static addTaskNote(taskId, text) {
-        const tasks = this.getTasks();
+    static async addTaskNote(taskId, text) {
+        const tasks = await this.getTasks();
         const index = tasks.findIndex(t => t.id === taskId);
         
         if (index !== -1) {
@@ -303,7 +444,7 @@ class StorageManager {
             task.notes.push(note);
             task.updatedAt = new Date().toISOString();
             
-            const success = this._safeSave(this.STORAGE_KEYS.TASKS, tasks);
+            const success = await this._writeFile('TASKS', tasks);
             
             if (success && window.EventBus) {
                 EventBus.emit('task:noteAdded', { taskId, note });
@@ -318,8 +459,8 @@ class StorageManager {
     /**
      * Time Tracking
      */
-    static toggleTimeTracking(taskId) {
-        const task = this.getTaskById(taskId);
+    static async toggleTimeTracking(taskId) {
+        const task = await this.getTaskById(taskId);
         if (!task || task.status !== 'in-progress') return null;
         
         // Initialize timeTracking object if it doesn't exist
@@ -331,7 +472,7 @@ class StorageManager {
         
         // Check if any other task is currently being tracked
         if (!timeTracking.isActive) {
-            const tasks = this.getTasks();
+            const tasks = await this.getTasks();
             const activeTask = tasks.find(t => 
                 t.id !== taskId && 
                 t.timeTracking && 
@@ -340,7 +481,7 @@ class StorageManager {
             
             // Pause the other active task first
             if (activeTask) {
-                this.toggleTimeTracking(activeTask.id);
+                await this.toggleTimeTracking(activeTask.id);
             }
         }
         
@@ -381,7 +522,7 @@ class StorageManager {
         }
         
         // Update task with new timeTracking data
-        return this.updateTask(taskId, {
+        return await this.updateTask(taskId, {
             timeTracking: timeTracking,
             startedAt: task.startedAt
         });
@@ -390,14 +531,14 @@ class StorageManager {
     /**
      * Settings Management
      */
-    static getSettings() {
-        return this._safeParse(this.STORAGE_KEYS.SETTINGS, {});
+    static async getSettings() {
+        return await this._readFile('SETTINGS', {});
     }
-
-    static updateSettings(updates) {
-        const settings = this.getSettings();
+    
+    static async updateSettings(updates) {
+        const settings = await this.getSettings();
         const newSettings = { ...settings, ...updates };
-        const success = this._safeSave(this.STORAGE_KEYS.SETTINGS, newSettings);
+        const success = await this._writeFile('SETTINGS', newSettings);
         
         if (success && window.EventBus) {
             EventBus.emit('settings:updated', newSettings);
@@ -405,23 +546,47 @@ class StorageManager {
         
         return success ? newSettings : null;
     }
-
+    
     /**
      * Data Export/Import
      */
-    static exportData() {
-        const data = {
-            projects: this.getProjects(),
-            tasks: this.getTasks(),
-            settings: this.getSettings(),
-            exportDate: new Date().toISOString(),
-            version: '2.0'
-        };
-        
-        return JSON.stringify(data, null, 2);
+    static async exportData() {
+        try {
+            // Try using the API's export endpoint
+            const response = await fetch(`${this.API_URL}/export`);
+            
+            if (response.ok) {
+                const data = await response.json();
+                return JSON.stringify(data, null, 2);
+            }
+            
+            // Fallback to manual export
+            const data = {
+                projects: await this.getProjects(),
+                tasks: await this.getTasks(),
+                settings: await this.getSettings(),
+                exportDate: new Date().toISOString(),
+                version: '2.0'
+            };
+            
+            return JSON.stringify(data, null, 2);
+        } catch (error) {
+            console.error('Error exporting data:', error);
+            
+            // Fallback to manual export
+            const data = {
+                projects: await this.getProjects(),
+                tasks: await this.getTasks(),
+                settings: await this.getSettings(),
+                exportDate: new Date().toISOString(),
+                version: '2.0'
+            };
+            
+            return JSON.stringify(data, null, 2);
+        }
     }
-
-    static importData(jsonString) {
+    
+    static async importData(jsonString) {
         try {
             const data = JSON.parse(jsonString);
             
@@ -434,25 +599,50 @@ class StorageManager {
                 throw new Error('Invalid tasks data structure');
             }
             
-            // Import data
-            this._safeSave(this.STORAGE_KEYS.PROJECTS, data.projects);
-            this._safeSave(this.STORAGE_KEYS.TASKS, data.tasks);
-            
-            if (data.settings) {
-                this._safeSave(this.STORAGE_KEYS.SETTINGS, data.settings);
-            }
-            
-            // Update last sync time
-            this._safeSave(this.STORAGE_KEYS.LAST_SYNC, new Date().toISOString());
-            
-            if (window.EventBus) {
-                EventBus.emit('data:imported', { 
-                    projectCount: data.projects.length,
-                    taskCount: data.tasks.length
+            try {
+                // Try using the API's import endpoint
+                const response = await fetch(`${this.API_URL}/import`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
                 });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    
+                    if (window.EventBus) {
+                        EventBus.emit('data:imported', { 
+                            projectCount: data.projects.length,
+                            taskCount: data.tasks.length
+                        });
+                    }
+                    
+                    return true;
+                }
+                
+                throw new Error('API import failed');
+            } catch (apiError) {
+                console.warn('API import failed, falling back to manual import:', apiError);
+                
+                // Fallback to manual import
+                await this._writeFile('PROJECTS', data.projects);
+                await this._writeFile('TASKS', data.tasks);
+                
+                if (data.settings) {
+                    await this._writeFile('SETTINGS', data.settings);
+                }
+                
+                if (window.EventBus) {
+                    EventBus.emit('data:imported', { 
+                        projectCount: data.projects.length,
+                        taskCount: data.tasks.length
+                    });
+                }
+                
+                return true;
             }
-            
-            return true;
         } catch (error) {
             console.error('Error importing data:', error);
             
@@ -464,11 +654,6 @@ class StorageManager {
         }
     }
 }
-
-// Initialize storage when this script loads
-document.addEventListener('DOMContentLoaded', () => {
-    StorageManager.initialize();
-});
 
 // Make StorageManager available globally
 window.StorageManager = StorageManager;

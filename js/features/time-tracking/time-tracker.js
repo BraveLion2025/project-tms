@@ -1,6 +1,7 @@
 /**
  * Time Tracker for Project-TMS
  * Handles time tracking for tasks and updates displays
+ * Updated for async storage operations
  */
 class TimeTracker {
     constructor() {
@@ -12,13 +13,13 @@ class TimeTracker {
     /**
      * Initialize time tracker
      */
-    init() {
+    async init() {
         this._setupEventListeners();
         this._startTimerUpdates();
         this._setupBeforeUnload();
         
         // Find active task on load
-        this._findActiveTask();
+        await this._findActiveTask();
     }
 
     /**
@@ -53,18 +54,22 @@ class TimeTracker {
      * Find and set active task on load
      * @private
      */
-    _findActiveTask() {
+    async _findActiveTask() {
         if (!window.StorageManager) return;
         
-        const tasks = StorageManager.getTasks();
-        const activeTask = tasks.find(task => 
-            task.timeTracking && 
-            task.timeTracking.isActive
-        );
-        
-        if (activeTask) {
-            this.activeTimerId = activeTask.id;
-            this._startTickInterval();
+        try {
+            const tasks = await StorageManager.getTasks();
+            const activeTask = tasks.find(task => 
+                task.timeTracking && 
+                task.timeTracking.isActive
+            );
+            
+            if (activeTask) {
+                this.activeTimerId = activeTask.id;
+                this._startTickInterval();
+            }
+        } catch (error) {
+            console.error('Error finding active task:', error);
         }
     }
 
@@ -95,28 +100,32 @@ class TimeTracker {
      * Handle actions before page unload
      * @private
      */
-    _handleUnload() {
+    async _handleUnload() {
         // Automatically pause any active timers when the page is closed
         if (this.activeTimerId && window.StorageManager) {
-            const task = StorageManager.getTaskById(this.activeTimerId);
-            
-            if (task && task.timeTracking && task.timeTracking.isActive) {
-                // Calculate final time
-                const now = new Date();
-                const lastStarted = new Date(task.timeTracking.lastStarted);
-                const timeSpentThisSession = now - lastStarted;
+            try {
+                const task = await StorageManager.getTaskById(this.activeTimerId);
                 
-                const updatedTimeTracking = {
-                    ...task.timeTracking,
-                    isActive: false,
-                    totalTime: (task.timeTracking.totalTime || 0) + timeSpentThisSession,
-                    lastStarted: null
-                };
-                
-                // Update task with new time tracking data
-                StorageManager.updateTask(task.id, {
-                    timeTracking: updatedTimeTracking
-                });
+                if (task && task.timeTracking && task.timeTracking.isActive) {
+                    // Calculate final time
+                    const now = new Date();
+                    const lastStarted = new Date(task.timeTracking.lastStarted);
+                    const timeSpentThisSession = now - lastStarted;
+                    
+                    const updatedTimeTracking = {
+                        ...task.timeTracking,
+                        isActive: false,
+                        totalTime: (task.timeTracking.totalTime || 0) + timeSpentThisSession,
+                        lastStarted: null
+                    };
+                    
+                    // Update task with new time tracking data
+                    await StorageManager.updateTask(task.id, {
+                        timeTracking: updatedTimeTracking
+                    });
+                }
+            } catch (error) {
+                console.error('Error handling unload:', error);
             }
         }
     }
@@ -151,46 +160,54 @@ class TimeTracker {
      * Update timer displays
      * @private
      */
-    _updateTimerDisplays() {
+    async _updateTimerDisplays() {
         if (!this.activeTimerId || !window.StorageManager) return;
         
-        const task = StorageManager.getTaskById(this.activeTimerId);
-        if (!task) return;
-        
-        // Find all timer displays for this task
-        const timeDisplays = document.querySelectorAll(`.task-time-display[data-task-id="${this.activeTimerId}"]`);
-        timeDisplays.forEach(display => {
-            const timeSpent = this._calculateTimeSpent(task);
-            const formattedTime = window.DateFormatter ? 
-                DateFormatter.formatDuration(timeSpent) : 
-                this._formatDuration(timeSpent);
+        try {
+            const task = await StorageManager.getTaskById(this.activeTimerId);
+            if (!task) return;
             
-            display.textContent = `Time spent: ${formattedTime}`;
-        });
+            // Find all timer displays for this task
+            const timeDisplays = document.querySelectorAll(`.task-time-display[data-task-id="${this.activeTimerId}"]`);
+            timeDisplays.forEach(display => {
+                const timeSpent = this._calculateTimeSpent(task);
+                const formattedTime = window.DateFormatter ? 
+                    DateFormatter.formatDuration(timeSpent) : 
+                    this._formatDuration(timeSpent);
+                
+                display.textContent = `Time spent: ${formattedTime}`;
+            });
+        } catch (error) {
+            console.error('Error updating timer displays:', error);
+        }
     }
 
     /**
      * Update the active timer element in the view modal
      * @private
      */
-    _updateActiveTimerElement() {
+    async _updateActiveTimerElement() {
         if (!this.activeTimerId || !window.StorageManager) return;
         
-        const task = StorageManager.getTaskById(this.activeTimerId);
-        if (!task) return;
-        
-        // Find time display in view task modal
-        const timeInfoEl = document.getElementById('viewTaskTimeInfo');
-        if (!timeInfoEl) return;
-        
-        const timeSpentEl = timeInfoEl.querySelector('.time-spent-value');
-        if (timeSpentEl) {
-            const timeSpent = this._calculateTimeSpent(task);
-            const formattedTime = window.DateFormatter ? 
-                DateFormatter.formatDuration(timeSpent) : 
-                this._formatDuration(timeSpent);
+        try {
+            const task = await StorageManager.getTaskById(this.activeTimerId);
+            if (!task) return;
             
-            timeSpentEl.textContent = `Time spent: ${formattedTime}`;
+            // Find time display in view task modal
+            const timeInfoEl = document.getElementById('viewTaskTimeInfo');
+            if (!timeInfoEl) return;
+            
+            const timeSpentEl = timeInfoEl.querySelector('.time-spent-value');
+            if (timeSpentEl) {
+                const timeSpent = this._calculateTimeSpent(task);
+                const formattedTime = window.DateFormatter ? 
+                    DateFormatter.formatDuration(timeSpent) : 
+                    this._formatDuration(timeSpent);
+                
+                timeSpentEl.textContent = `Time spent: ${formattedTime}`;
+            }
+        } catch (error) {
+            console.error('Error updating active timer element:', error);
         }
     }
 
@@ -233,13 +250,18 @@ class TimeTracker {
     /**
      * Toggle time tracking for a task
      * @param {string} taskId - Task ID
-     * @returns {boolean} Success status
+     * @returns {Promise<boolean>} Success status
      */
-    toggleTracking(taskId) {
+    async toggleTracking(taskId) {
         if (!taskId || !window.StorageManager) return false;
         
-        const success = StorageManager.toggleTimeTracking(taskId);
-        return !!success;
+        try {
+            const success = await StorageManager.toggleTimeTracking(taskId);
+            return !!success;
+        } catch (error) {
+            console.error('Error toggling time tracking:', error);
+            return false;
+        }
     }
 
     /**

@@ -1,6 +1,7 @@
 /**
  * Task Manager Component for Project-TMS
  * Handles task operations and kanban board functionality
+ * Updated for async storage operations
  */
 class TaskManager {
     constructor() {
@@ -13,7 +14,7 @@ class TaskManager {
     /**
      * Initialize the task manager
      */
-    init() {
+    async init() {
         this._findTaskContainers();
         this._setupEventListeners();
         
@@ -205,92 +206,96 @@ class TaskManager {
      * Load tasks for a project
      * @param {string} projectId - Project ID
      */
-    loadTasks(projectId) {
+    async loadTasks(projectId) {
         if (!projectId || !window.StorageManager) return;
         
-        const tasks = StorageManager.getTasksByProject(projectId);
-        
-        // Clear all task containers
-        this.taskContainers.forEach(container => {
-            if (container) container.innerHTML = '';
-        });
-        
-        // Group tasks by status
-        const tasksByStatus = {
-            'todo': [],
-            'in-progress': [],
-            'review': [],
-            'done': []
-        };
-        
-        // Separate tasks by status
-        tasks.forEach(task => {
-            if (tasksByStatus[task.status]) {
-                tasksByStatus[task.status].push(task);
-            } else {
-                tasksByStatus.todo.push(task); // Default for invalid status
+        try {
+            const tasks = await StorageManager.getTasksByProject(projectId);
+            
+            // Clear all task containers
+            this.taskContainers.forEach(container => {
+                if (container) container.innerHTML = '';
+            });
+            
+            // Group tasks by status
+            const tasksByStatus = {
+                'todo': [],
+                'in-progress': [],
+                'review': [],
+                'done': []
+            };
+            
+            // Separate tasks by status
+            tasks.forEach(task => {
+                if (tasksByStatus[task.status]) {
+                    tasksByStatus[task.status].push(task);
+                } else {
+                    tasksByStatus.todo.push(task); // Default for invalid status
+                }
+            });
+            
+            // Sort tasks by priority and other factors
+            const sortTasks = tasksArray => {
+                return tasksArray.sort((a, b) => {
+                    // Active timer tasks first (for in-progress)
+                    if (a.timeTracking?.isActive && !b.timeTracking?.isActive) return -1;
+                    if (!a.timeTracking?.isActive && b.timeTracking?.isActive) return 1;
+                    
+                    // Then by priority
+                    const priorityOrder = { high: 0, medium: 1, low: 2 };
+                    const priorityDiff = (priorityOrder[a.priority] || 999) - (priorityOrder[b.priority] || 999);
+                    if (priorityDiff !== 0) return priorityDiff;
+                    
+                    // Then by due date (earlier dates first)
+                    if (a.dueDate && b.dueDate) {
+                        return new Date(a.dueDate) - new Date(b.dueDate);
+                    }
+                    
+                    // Due dates first over undefined due dates
+                    if (a.dueDate && !b.dueDate) return -1;
+                    if (!a.dueDate && b.dueDate) return 1;
+                    
+                    // Finally by creation date (newer first)
+                    return new Date(b.createdAt) - new Date(a.createdAt);
+                });
+            };
+            
+            // Sort and render tasks
+            Object.keys(tasksByStatus).forEach(status => {
+                const container = this._getContainerByStatus(status);
+                if (!container) return;
+                
+                const sortedTasks = sortTasks(tasksByStatus[status]);
+                
+                sortedTasks.forEach(task => {
+                    // Create task card
+                    if (window.TaskCard) {
+                        const taskEl = TaskCard.create(task, taskData => {
+                            this.openViewTaskModal(taskData.id);
+                        });
+                        container.appendChild(taskEl);
+                    }
+                });
+            });
+            
+            // Update task counts
+            this._updateTaskCounts(tasks);
+            
+            // Dispatch event
+            if (window.EventBus) {
+                EventBus.emit('tasks:loaded', { 
+                    projectId, 
+                    taskCounts: {
+                        todo: tasksByStatus.todo.length,
+                        inProgress: tasksByStatus['in-progress'].length,
+                        review: tasksByStatus.review.length,
+                        done: tasksByStatus.done.length,
+                        total: tasks.length
+                    }
+                });
             }
-        });
-        
-        // Sort tasks by priority and other factors
-        const sortTasks = tasksArray => {
-            return tasksArray.sort((a, b) => {
-                // Active timer tasks first (for in-progress)
-                if (a.timeTracking?.isActive && !b.timeTracking?.isActive) return -1;
-                if (!a.timeTracking?.isActive && b.timeTracking?.isActive) return 1;
-                
-                // Then by priority
-                const priorityOrder = { high: 0, medium: 1, low: 2 };
-                const priorityDiff = (priorityOrder[a.priority] || 999) - (priorityOrder[b.priority] || 999);
-                if (priorityDiff !== 0) return priorityDiff;
-                
-                // Then by due date (earlier dates first)
-                if (a.dueDate && b.dueDate) {
-                    return new Date(a.dueDate) - new Date(b.dueDate);
-                }
-                
-                // Due dates first over undefined due dates
-                if (a.dueDate && !b.dueDate) return -1;
-                if (!a.dueDate && b.dueDate) return 1;
-                
-                // Finally by creation date (newer first)
-                return new Date(b.createdAt) - new Date(a.createdAt);
-            });
-        };
-        
-        // Sort and render tasks
-        Object.keys(tasksByStatus).forEach(status => {
-            const container = this._getContainerByStatus(status);
-            if (!container) return;
-            
-            const sortedTasks = sortTasks(tasksByStatus[status]);
-            
-            sortedTasks.forEach(task => {
-                // Create task card
-                if (window.TaskCard) {
-                    const taskEl = TaskCard.create(task, taskData => {
-                        this.openViewTaskModal(taskData.id);
-                    });
-                    container.appendChild(taskEl);
-                }
-            });
-        });
-        
-        // Update task counts
-        this._updateTaskCounts(tasks);
-        
-        // Dispatch event
-        if (window.EventBus) {
-            EventBus.emit('tasks:loaded', { 
-                projectId, 
-                taskCounts: {
-                    todo: tasksByStatus.todo.length,
-                    inProgress: tasksByStatus['in-progress'].length,
-                    review: tasksByStatus.review.length,
-                    done: tasksByStatus.done.length,
-                    total: tasks.length
-                }
-            });
+        } catch (error) {
+            console.error('Error loading tasks:', error);
         }
     }
 
@@ -365,27 +370,31 @@ class TaskManager {
      * Refresh time display for a specific task
      * @param {string} taskId - Task ID
      */
-    refreshTimeDisplay(taskId) {
+    async refreshTimeDisplay(taskId) {
         if (!taskId || !window.StorageManager) return;
         
-        const task = StorageManager.getTaskById(taskId);
-        if (!task) return;
-        
-        // Find all instances of this task in the UI
-        const taskElements = document.querySelectorAll(`.task-card[data-task-id="${taskId}"]`);
-        
-        taskElements.forEach(taskEl => {
-            if (window.TaskCard) {
-                TaskCard.update(taskEl, task);
-            }
-        });
+        try {
+            const task = await StorageManager.getTaskById(taskId);
+            if (!task) return;
+            
+            // Find all instances of this task in the UI
+            const taskElements = document.querySelectorAll(`.task-card[data-task-id="${taskId}"]`);
+            
+            taskElements.forEach(taskEl => {
+                if (window.TaskCard) {
+                    TaskCard.update(taskEl, task);
+                }
+            });
+        } catch (error) {
+            console.error('Error refreshing time display:', error);
+        }
     }
     
     /**
      * Open task modal for creating or editing a task
      * @param {string} [taskId=null] - Task ID for editing, null for new task
      */
-    openTaskModal(taskId = null) {
+    async openTaskModal(taskId = null) {
         const modal = document.getElementById('taskModal');
         const form = document.getElementById('taskForm');
         const modalTitle = document.getElementById('taskModalTitle');
@@ -397,16 +406,20 @@ class TaskManager {
         form.reset();
         if (idField) idField.value = '';
         
-        if (taskId) {
+        if (taskId && window.StorageManager) {
             // Edit existing task
-            const task = StorageManager.getTaskById(taskId);
-            if (!task) return;
-            
-            if (modalTitle) modalTitle.textContent = 'Edit Task';
-            if (idField) idField.value = task.id;
-            
-            // Set form fields
-            this._setFormValues(form, task);
+            try {
+                const task = await StorageManager.getTaskById(taskId);
+                if (!task) return;
+                
+                if (modalTitle) modalTitle.textContent = 'Edit Task';
+                if (idField) idField.value = task.id;
+                
+                // Set form fields
+                this._setFormValues(form, task);
+            } catch (error) {
+                console.error('Error loading task for editing:', error);
+            }
         } else {
             // New task
             if (modalTitle) modalTitle.textContent = 'New Task';
@@ -519,7 +532,7 @@ class TaskManager {
     /**
      * Save task from form data
      */
-    saveTask() {
+    async saveTask() {
         if (!this.currentProjectId || !window.StorageManager) return;
         
         const form = document.getElementById('taskForm');
@@ -548,32 +561,41 @@ class TaskManager {
             return;
         }
         
-        let result;
-        
-        if (taskId) {
-            // Update existing task
-            result = StorageManager.updateTask(taskId, taskData);
-        } else {
-            // Create new task
-            result = StorageManager.addTask(taskData);
-        }
-        
-        if (result) {
-            this.closeTaskModal();
-            this.refreshTasks();
+        try {
+            let result;
             
-            // Show notification
-            if (window.NotificationManager) {
-                NotificationManager.success(
-                    taskId ? 'Task updated successfully' : 'Task created successfully'
-                );
-            }
-        } else {
-            // Show error
-            if (window.NotificationManager) {
-                NotificationManager.error('Failed to save task');
+            if (taskId) {
+                // Update existing task
+                result = await StorageManager.updateTask(taskId, taskData);
             } else {
-                alert('Failed to save task');
+                // Create new task
+                result = await StorageManager.addTask(taskData);
+            }
+            
+            if (result) {
+                this.closeTaskModal();
+                this.refreshTasks();
+                
+                // Show notification
+                if (window.NotificationManager) {
+                    NotificationManager.success(
+                        taskId ? 'Task updated successfully' : 'Task created successfully'
+                    );
+                }
+            } else {
+                // Show error
+                if (window.NotificationManager) {
+                    NotificationManager.error('Failed to save task');
+                } else {
+                    alert('Failed to save task');
+                }
+            }
+        } catch (error) {
+            console.error('Error saving task:', error);
+            if (window.NotificationManager) {
+                NotificationManager.error('Failed to save task: ' + error.message);
+            } else {
+                alert('Failed to save task: ' + error.message);
             }
         }
     }
@@ -582,119 +604,123 @@ class TaskManager {
      * Open the task view modal
      * @param {string} taskId - Task ID
      */
-    openViewTaskModal(taskId) {
+    async openViewTaskModal(taskId) {
         if (!taskId || !window.StorageManager) return;
         
-        const task = StorageManager.getTaskById(taskId);
-        if (!task) return;
-        
-        this.currentTask = task;
-        
-        const modal = document.getElementById('viewTaskModal');
-        if (!modal) return;
-        
-        // Update modal content
-        const title = document.getElementById('viewTaskTitle');
-        const desc = document.getElementById('viewTaskDesc');
-        const status = document.getElementById('viewTaskStatus');
-        const priority = document.getElementById('viewTaskPriority');
-        const dueDate = document.getElementById('viewTaskDueDate');
-        const assignee = document.getElementById('viewTaskAssignee');
-        const timeInfo = document.getElementById('viewTaskTimeInfo');
-        
-        if (title) title.textContent = task.title;
-        if (desc) desc.textContent = task.description || 'No description provided';
-        if (status) status.value = task.status;
-        
-        // Set priority
-        let priorityText = 'Low';
-        if (task.priority === 'high') priorityText = 'High';
-        else if (task.priority === 'medium') priorityText = 'Medium';
-        
-        if (priority) priority.textContent = priorityText;
-        
-        // Set due date
-        if (dueDate) {
-            if (task.dueDate) {
-                let dueDateText;
-                let dueDateClass = '';
-                
-                if (window.DateFormatter) {
-                    dueDateText = DateFormatter.formatShortDate(task.dueDate);
+        try {
+            const task = await StorageManager.getTaskById(taskId);
+            if (!task) return;
+            
+            this.currentTask = task;
+            
+            const modal = document.getElementById('viewTaskModal');
+            if (!modal) return;
+            
+            // Update modal content
+            const title = document.getElementById('viewTaskTitle');
+            const desc = document.getElementById('viewTaskDesc');
+            const status = document.getElementById('viewTaskStatus');
+            const priority = document.getElementById('viewTaskPriority');
+            const dueDate = document.getElementById('viewTaskDueDate');
+            const assignee = document.getElementById('viewTaskAssignee');
+            const timeInfo = document.getElementById('viewTaskTimeInfo');
+            
+            if (title) title.textContent = task.title;
+            if (desc) desc.textContent = task.description || 'No description provided';
+            if (status) status.value = task.status;
+            
+            // Set priority
+            let priorityText = 'Low';
+            if (task.priority === 'high') priorityText = 'High';
+            else if (task.priority === 'medium') priorityText = 'Medium';
+            
+            if (priority) priority.textContent = priorityText;
+            
+            // Set due date
+            if (dueDate) {
+                if (task.dueDate) {
+                    let dueDateText;
+                    let dueDateClass = '';
                     
-                    if (DateFormatter.isOverdue(task.dueDate)) {
-                        dueDateClass = 'text-red-500';
-                    } else if (DateFormatter.isApproaching(task.dueDate, 2)) {
-                        dueDateClass = 'text-yellow-500';
+                    if (window.DateFormatter) {
+                        dueDateText = DateFormatter.formatShortDate(task.dueDate);
+                        
+                        if (DateFormatter.isOverdue(task.dueDate)) {
+                            dueDateClass = 'text-red-500';
+                        } else if (DateFormatter.isApproaching(task.dueDate, 2)) {
+                            dueDateClass = 'text-yellow-500';
+                        }
+                    } else {
+                        dueDateText = new Date(task.dueDate).toLocaleDateString();
                     }
+                    
+                    dueDate.textContent = dueDateText;
+                    dueDate.className = dueDateClass;
                 } else {
-                    dueDateText = new Date(task.dueDate).toLocaleDateString();
+                    dueDate.textContent = 'No due date';
+                    dueDate.className = '';
                 }
-                
-                dueDate.textContent = dueDateText;
-                dueDate.className = dueDateClass;
-            } else {
-                dueDate.textContent = 'No due date';
-                dueDate.className = '';
-            }
-        }
-        
-        // Set assignee
-        if (assignee) {
-            assignee.textContent = task.assignee || 'Unassigned';
-        }
-        
-        // Update time tracking info
-        if (timeInfo) {
-            let timeInfoHtml = '';
-            
-            if (task.startedAt) {
-                const startedDate = window.DateFormatter ? 
-                    DateFormatter.formatDateTime(task.startedAt) : 
-                    new Date(task.startedAt).toLocaleString();
-                
-                timeInfoHtml += `<div class="mb-1">Started: ${startedDate}</div>`;
             }
             
-            if (task.completedAt) {
-                const completedDate = window.DateFormatter ? 
-                    DateFormatter.formatDateTime(task.completedAt) : 
-                    new Date(task.completedAt).toLocaleString();
-                
-                timeInfoHtml += `<div class="mb-1">Completed: ${completedDate}</div>`;
+            // Set assignee
+            if (assignee) {
+                assignee.textContent = task.assignee || 'Unassigned';
+            }
+            
+            // Update time tracking info
+            if (timeInfo) {
+                let timeInfoHtml = '';
                 
                 if (task.startedAt) {
-                    const startDate = new Date(task.startedAt);
-                    const endDate = new Date(task.completedAt);
-                    const durationDays = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24));
+                    const startedDate = window.DateFormatter ? 
+                        DateFormatter.formatDateTime(task.startedAt) : 
+                        new Date(task.startedAt).toLocaleString();
                     
-                    timeInfoHtml += `<div class="mb-1">Duration: ${durationDays} day${durationDays !== 1 ? 's' : ''}</div>`;
+                    timeInfoHtml += `<div class="mb-1">Started: ${startedDate}</div>`;
                 }
-            }
-            
-            if (task.timeTracking && task.timeTracking.totalTime > 0) {
-                const timeSpent = task.timeTracking.totalTime;
-                const timeSpentFormatted = window.DateFormatter ? 
-                    DateFormatter.formatDuration(timeSpent) : 
-                    this._formatDuration(timeSpent);
                 
-                timeInfoHtml += `<div class="time-spent-value">Time spent: ${timeSpentFormatted}</div>`;
+                if (task.completedAt) {
+                    const completedDate = window.DateFormatter ? 
+                        DateFormatter.formatDateTime(task.completedAt) : 
+                        new Date(task.completedAt).toLocaleString();
+                    
+                    timeInfoHtml += `<div class="mb-1">Completed: ${completedDate}</div>`;
+                    
+                    if (task.startedAt) {
+                        const startDate = new Date(task.startedAt);
+                        const endDate = new Date(task.completedAt);
+                        const durationDays = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24));
+                        
+                        timeInfoHtml += `<div class="mb-1">Duration: ${durationDays} day${durationDays !== 1 ? 's' : ''}</div>`;
+                    }
+                }
+                
+                if (task.timeTracking && task.timeTracking.totalTime > 0) {
+                    const timeSpent = task.timeTracking.totalTime;
+                    const timeSpentFormatted = window.DateFormatter ? 
+                        DateFormatter.formatDuration(timeSpent) : 
+                        this._formatDuration(timeSpent);
+                    
+                    timeInfoHtml += `<div class="time-spent-value">Time spent: ${timeSpentFormatted}</div>`;
+                }
+                
+                timeInfo.innerHTML = timeInfoHtml || 'No time tracking data available';
             }
             
-            timeInfo.innerHTML = timeInfoHtml || 'No time tracking data available';
+            // Setup time tracking controls
+            this._setupTimeTrackingControls(task);
+            
+            // Render task notes
+            this._renderTaskNotes(task);
+            
+            // Show modal
+            modal.classList.add('active');
+            
+            // Set up event listeners
+            this._setupViewTaskModalEvents(task);
+        } catch (error) {
+            console.error('Error opening task view:', error);
         }
-        
-        // Setup time tracking controls
-        this._setupTimeTrackingControls(task);
-        
-        // Render task notes
-        this._renderTaskNotes(task);
-        
-        // Show modal
-        modal.classList.add('active');
-        
-        // Set up event listeners
-        this._setupViewTaskModalEvents(task);
     }
     
     /**
@@ -729,9 +755,9 @@ class TaskManager {
             // Add event listener
             const toggleTimerBtn = document.getElementById('toggleTimerBtn');
             if (toggleTimerBtn) {
-                toggleTimerBtn.addEventListener('click', () => {
+                toggleTimerBtn.addEventListener('click', async () => {
                     if (window.StorageManager) {
-                        StorageManager.toggleTimeTracking(task.id);
+                        await StorageManager.toggleTimeTracking(task.id);
                         
                         // Refresh the modal
                         this.openViewTaskModal(task.id);
@@ -841,49 +867,56 @@ class TaskManager {
      * @param {string} taskId - Task ID
      * @param {string} newStatus - New status value
      */
-    updateTaskStatus(taskId, newStatus) {
+    async updateTaskStatus(taskId, newStatus) {
         if (!taskId || !window.StorageManager) return;
         
-        const task = StorageManager.getTaskById(taskId);
-        if (!task) return;
-        
-        // Skip if status hasn't changed
-        if (task.status === newStatus) return;
-        
-        const updates = { status: newStatus };
-        
-        // Status-specific actions
-        if (newStatus === 'in-progress' && !task.startedAt) {
-            // Record start time when moving to in-progress for the first time
-            updates.startedAt = new Date().toISOString();
-        } else if (newStatus === 'done' && task.status !== 'done') {
-            // Record completion time when marking as done
-            updates.completedAt = new Date().toISOString();
+        try {
+            const task = await StorageManager.getTaskById(taskId);
+            if (!task) return;
             
-            // Stop timer if active
-            if (task.timeTracking && task.timeTracking.isActive) {
-                StorageManager.toggleTimeTracking(taskId);
-            }
-        } else if (newStatus !== 'done' && task.status === 'done') {
-            // Clear completion time when moving from done to another status
-            updates.completedAt = null;
-        }
-        
-        // Update task
-        const updatedTask = StorageManager.updateTask(taskId, updates);
-        
-        if (updatedTask) {
-            // Refresh tasks display
-            this.refreshTasks();
+            // Skip if status hasn't changed
+            if (task.status === newStatus) return;
             
-            // Update view modal if it's open
-            if (this.currentTask && this.currentTask.id === taskId) {
-                this.openViewTaskModal(taskId);
+            const updates = { status: newStatus };
+            
+            // Status-specific actions
+            if (newStatus === 'in-progress' && !task.startedAt) {
+                // Record start time when moving to in-progress for the first time
+                updates.startedAt = new Date().toISOString();
+            } else if (newStatus === 'done' && task.status !== 'done') {
+                // Record completion time when marking as done
+                updates.completedAt = new Date().toISOString();
+                
+                // Stop timer if active
+                if (task.timeTracking && task.timeTracking.isActive) {
+                    await StorageManager.toggleTimeTracking(taskId);
+                }
+            } else if (newStatus !== 'done' && task.status === 'done') {
+                // Clear completion time when moving from done to another status
+                updates.completedAt = null;
             }
             
-            // Show notification
+            // Update task
+            const updatedTask = await StorageManager.updateTask(taskId, updates);
+            
+            if (updatedTask) {
+                // Refresh tasks display
+                this.refreshTasks();
+                
+                // Update view modal if it's open
+                if (this.currentTask && this.currentTask.id === taskId) {
+                    this.openViewTaskModal(taskId);
+                }
+                
+                // Show notification
+                if (window.NotificationManager) {
+                    NotificationManager.success(`Task moved to ${this._getStatusLabel(newStatus)}`);
+                }
+            }
+        } catch (error) {
+            console.error('Error updating task status:', error);
             if (window.NotificationManager) {
-                NotificationManager.success(`Task moved to ${this._getStatusLabel(newStatus)}`);
+                NotificationManager.error('Failed to update task status: ' + error.message);
             }
         }
     }
@@ -909,7 +942,7 @@ class TaskManager {
      * @param {string} taskId - Task ID
      * @param {string} noteText - Note text
      */
-    addTaskNote(taskId, noteText) {
+    async addTaskNote(taskId, noteText) {
         if (!taskId || !noteText || !window.StorageManager) return;
         
         // Trim note text
@@ -922,28 +955,29 @@ class TaskManager {
             return;
         }
         
-        // Add the note
-        const updatedTask = StorageManager.addTaskNote(taskId, noteText);
-        
-        if (updatedTask) {
-            // Clear note input
-            const noteInput = document.getElementById('newTaskNote');
-            if (noteInput) noteInput.value = '';
+        try {
+            // Add the note
+            const updatedTask = await StorageManager.addTaskNote(taskId, noteText);
             
-            // Update task and refresh notes section
-            this.currentTask = updatedTask;
-            this._renderTaskNotes(updatedTask);
-            
-            // Show success message
+            if (updatedTask) {
+                // Clear note input
+                const noteInput = document.getElementById('newTaskNote');
+                if (noteInput) noteInput.value = '';
+                
+                // Update task and refresh notes section
+                this.currentTask = updatedTask;
+                this._renderTaskNotes(updatedTask);
+                
+                // Show success message
+                if (window.NotificationManager) {
+                    NotificationManager.success('Note added');
+                }
+            }
+        } catch (error) {
+            console.error('Error adding note:', error);
             if (window.NotificationManager) {
-                NotificationManager.success('Note added');
+                NotificationManager.error('Failed to add note: ' + error.message);
             }
         }
     }
 }
-
-// Initialize on DOM content loaded
-document.addEventListener('DOMContentLoaded', () => {
-    // Create global TaskManager instance
-    window.taskManager = new TaskManager();
-});

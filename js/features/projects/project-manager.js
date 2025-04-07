@@ -1,6 +1,7 @@
 /**
  * Project Manager Component for Project-TMS
  * Handles project operations and UI interactions
+ * Updated for async storage operations
  */
 class ProjectManager {
     constructor() {
@@ -11,14 +12,14 @@ class ProjectManager {
     /**
      * Initialize the project manager
      */
-    init() {
+    async init() {
         this._setupEventListeners();
-        this.loadProjects();
+        await this.loadProjects();
         
         // Subscribe to global events
         if (window.EventBus) {
-            EventBus.subscribe('project:created', project => {
-                this.loadProjects();
+            EventBus.subscribe('project:created', async project => {
+                await this.loadProjects();
                 this.selectProject(project.id);
                 
                 if (window.NotificationManager) {
@@ -26,8 +27,8 @@ class ProjectManager {
                 }
             });
             
-            EventBus.subscribe('project:updated', project => {
-                this.loadProjects();
+            EventBus.subscribe('project:updated', async project => {
+                await this.loadProjects();
                 this.selectProject(project.id);
                 
                 if (window.NotificationManager) {
@@ -35,8 +36,8 @@ class ProjectManager {
                 }
             });
             
-            EventBus.subscribe('project:deleted', data => {
-                this.loadProjects();
+            EventBus.subscribe('project:deleted', async data => {
+                await this.loadProjects();
                 this.clearProjectDisplay();
                 
                 if (window.NotificationManager) {
@@ -147,34 +148,44 @@ class ProjectManager {
     /**
      * Load projects from storage and update UI
      */
-    loadProjects() {
+    async loadProjects() {
         if (!window.StorageManager) return;
         
-        const projects = StorageManager.getProjects();
-        const projectSelect = document.getElementById('projectSelect');
-        
-        if (!projectSelect) return;
-        
-        // Clear existing options
-        projectSelect.innerHTML = '<option value="">Select a project</option>';
-        
-        // Add options for each project
-        projects.forEach(project => {
-            const option = document.createElement('option');
-            option.value = project.id;
-            option.textContent = project.name;
-            projectSelect.appendChild(option);
-        });
-        
-        // Toggle empty state
-        this.toggleEmptyState(projects.length === 0);
-        
-        // Disable project-specific buttons initially
-        const editBtn = document.getElementById('editProjectBtn');
-        const deleteBtn = document.getElementById('deleteProjectBtn');
-        
-        if (editBtn) editBtn.disabled = true;
-        if (deleteBtn) deleteBtn.disabled = true;
+        try {
+            const projects = await StorageManager.getProjects();
+            const projectSelect = document.getElementById('projectSelect');
+            
+            if (!projectSelect) return;
+            
+            // Clear existing options
+            projectSelect.innerHTML = '<option value="">Select a project</option>';
+            
+            // Add options for each project
+            if (Array.isArray(projects)) {
+                projects.forEach(project => {
+                    const option = document.createElement('option');
+                    option.value = project.id;
+                    option.textContent = project.name;
+                    projectSelect.appendChild(option);
+                });
+                
+                // Toggle empty state
+                this.toggleEmptyState(projects.length === 0);
+            } else {
+                console.error("Projects is not an array:", projects);
+                this.toggleEmptyState(true);
+            }
+            
+            // Disable project-specific buttons initially
+            const editBtn = document.getElementById('editProjectBtn');
+            const deleteBtn = document.getElementById('deleteProjectBtn');
+            
+            if (editBtn) editBtn.disabled = true;
+            if (deleteBtn) deleteBtn.disabled = true;
+        } catch (error) {
+            console.error("Error loading projects:", error);
+            this.toggleEmptyState(true);
+        }
     }
 
     /**
@@ -225,38 +236,42 @@ class ProjectManager {
      * Select a project and display its details
      * @param {string} projectId - Project ID
      */
-    selectProject(projectId) {
+    async selectProject(projectId) {
         if (!window.StorageManager) return;
         
-        const project = StorageManager.getProjectById(projectId);
-        if (!project) return;
-        
-        this.currentProject = project;
-        
-        // Enable project action buttons
-        const editProjectBtn = document.getElementById('editProjectBtn');
-        const deleteProjectBtn = document.getElementById('deleteProjectBtn');
-        
-        if (editProjectBtn) editProjectBtn.disabled = false;
-        if (deleteProjectBtn) deleteProjectBtn.disabled = false;
-        
-        // Update project details section
-        this._updateProjectDetails(project);
-        
-        // Show project sections
-        const projectDetails = document.getElementById('projectDetails');
-        const taskManagement = document.getElementById('taskManagement');
-        
-        if (projectDetails) projectDetails.classList.remove('hidden');
-        if (taskManagement) taskManagement.classList.remove('hidden');
-        
-        // Update project selector
-        const projectSelect = document.getElementById('projectSelect');
-        if (projectSelect) projectSelect.value = projectId;
-        
-        // Notify TaskManager that a project is selected
-        if (window.EventBus) {
-            EventBus.emit('project:selected', { projectId });
+        try {
+            const project = await StorageManager.getProjectById(projectId);
+            if (!project) return;
+            
+            this.currentProject = project;
+            
+            // Enable project action buttons
+            const editProjectBtn = document.getElementById('editProjectBtn');
+            const deleteProjectBtn = document.getElementById('deleteProjectBtn');
+            
+            if (editProjectBtn) editProjectBtn.disabled = false;
+            if (deleteProjectBtn) deleteProjectBtn.disabled = false;
+            
+            // Update project details section
+            this._updateProjectDetails(project);
+            
+            // Show project sections
+            const projectDetails = document.getElementById('projectDetails');
+            const taskManagement = document.getElementById('taskManagement');
+            
+            if (projectDetails) projectDetails.classList.remove('hidden');
+            if (taskManagement) taskManagement.classList.remove('hidden');
+            
+            // Update project selector
+            const projectSelect = document.getElementById('projectSelect');
+            if (projectSelect) projectSelect.value = projectId;
+            
+            // Notify TaskManager that a project is selected
+            if (window.EventBus) {
+                EventBus.emit('project:selected', { projectId });
+            }
+        } catch (error) {
+            console.error("Error selecting project:", error);
         }
     }
     
@@ -363,48 +378,50 @@ class ProjectManager {
         
         // Get all tasks for this project to calculate time metrics
         if (window.StorageManager && (totalTimeSpent || avgTaskCompletion)) {
-            const tasks = StorageManager.getTasksByProject(projectId);
-            
-            // Calculate total time spent
-            let totalTimeMs = 0;
-            let completedTasksTimeMs = 0;
-            let completedTaskCount = 0;
-            
-            tasks.forEach(task => {
-                if (task.timeTracking && task.timeTracking.totalTime) {
-                    const taskTime = task.timeTracking.totalTime;
-                    
-                    // Add to total time
-                    totalTimeMs += taskTime;
-                    
-                    // Add to completed tasks time if task is done
-                    if (task.status === 'done') {
-                        completedTasksTimeMs += taskTime;
-                        completedTaskCount++;
+            StorageManager.getTasksByProject(projectId).then(tasks => {
+                // Calculate total time spent
+                let totalTimeMs = 0;
+                let completedTasksTimeMs = 0;
+                let completedTaskCount = 0;
+                
+                tasks.forEach(task => {
+                    if (task.timeTracking && task.timeTracking.totalTime) {
+                        const taskTime = task.timeTracking.totalTime;
+                        
+                        // Add to total time
+                        totalTimeMs += taskTime;
+                        
+                        // Add to completed tasks time if task is done
+                        if (task.status === 'done') {
+                            completedTasksTimeMs += taskTime;
+                            completedTaskCount++;
+                        }
                     }
+                });
+                
+                // Format and display total time
+                if (totalTimeSpent) {
+                    const formattedTime = window.DateFormatter ? 
+                        DateFormatter.formatDuration(totalTimeMs) : 
+                        this._formatDuration(totalTimeMs);
+                    
+                    totalTimeSpent.textContent = formattedTime;
                 }
+                
+                // Calculate and display average task completion time
+                if (avgTaskCompletion) {
+                    const avgTimeMs = completedTaskCount > 0 ? 
+                        completedTasksTimeMs / completedTaskCount : 0;
+                    
+                    const formattedAvgTime = window.DateFormatter ? 
+                        DateFormatter.formatDuration(avgTimeMs) : 
+                        this._formatDuration(avgTimeMs);
+                    
+                    avgTaskCompletion.textContent = formattedAvgTime;
+                }
+            }).catch(error => {
+                console.error("Error fetching tasks for metrics:", error);
             });
-            
-            // Format and display total time
-            if (totalTimeSpent) {
-                const formattedTime = window.DateFormatter ? 
-                    DateFormatter.formatDuration(totalTimeMs) : 
-                    this._formatDuration(totalTimeMs);
-                
-                totalTimeSpent.textContent = formattedTime;
-            }
-            
-            // Calculate and display average task completion time
-            if (avgTaskCompletion) {
-                const avgTimeMs = completedTaskCount > 0 ? 
-                    completedTasksTimeMs / completedTaskCount : 0;
-                
-                const formattedAvgTime = window.DateFormatter ? 
-                    DateFormatter.formatDuration(avgTimeMs) : 
-                    this._formatDuration(avgTimeMs);
-                
-                avgTaskCompletion.textContent = formattedAvgTime;
-            }
         }
     }
     
@@ -427,7 +444,7 @@ class ProjectManager {
      * Open the project modal for creating or editing
      * @param {string} [projectId=null] - Project ID for editing, null for new project
      */
-    openProjectModal(projectId = null) {
+    async openProjectModal(projectId = null) {
         const modal = document.getElementById('projectModal');
         const form = document.getElementById('projectForm');
         const titleEl = document.getElementById('projectModalTitle');
@@ -441,24 +458,28 @@ class ProjectManager {
         
         if (projectId && window.StorageManager) {
             // Edit existing project
-            const project = StorageManager.getProjectById(projectId);
-            if (!project) return;
-            
-            if (titleEl) titleEl.textContent = 'Edit Project';
-            if (idField) idField.value = project.id;
-            
-            // Set form fields
-            const nameInput = document.getElementById('projectNameInput');
-            const descInput = document.getElementById('projectDescInput');
-            const startInput = document.getElementById('projectStartInput');
-            const endInput = document.getElementById('projectEndInput');
-            const statusInput = document.getElementById('projectStatusInput');
-            
-            if (nameInput) nameInput.value = project.name;
-            if (descInput) descInput.value = project.description || '';
-            if (startInput) startInput.value = project.startDate || '';
-            if (endInput) endInput.value = project.endDate || '';
-            if (statusInput && project.status) statusInput.value = project.status;
+            try {
+                const project = await StorageManager.getProjectById(projectId);
+                if (!project) return;
+                
+                if (titleEl) titleEl.textContent = 'Edit Project';
+                if (idField) idField.value = project.id;
+                
+                // Set form fields
+                const nameInput = document.getElementById('projectNameInput');
+                const descInput = document.getElementById('projectDescInput');
+                const startInput = document.getElementById('projectStartInput');
+                const endInput = document.getElementById('projectEndInput');
+                const statusInput = document.getElementById('projectStatusInput');
+                
+                if (nameInput) nameInput.value = project.name;
+                if (descInput) descInput.value = project.description || '';
+                if (startInput) startInput.value = project.startDate || '';
+                if (endInput) endInput.value = project.endDate || '';
+                if (statusInput && project.status) statusInput.value = project.status;
+            } catch (error) {
+                console.error("Error fetching project for editing:", error);
+            }
         } else {
             // New project
             if (titleEl) titleEl.textContent = 'New Project';
@@ -485,7 +506,7 @@ class ProjectManager {
     /**
      * Save project data from form
      */
-    saveProject() {
+    async saveProject() {
         if (!window.StorageManager) return;
         
         const form = document.getElementById('projectForm');
@@ -512,24 +533,33 @@ class ProjectManager {
             return;
         }
         
-        let result;
-        
-        if (projectId) {
-            // Update existing project
-            result = StorageManager.updateProject(projectId, projectData);
-        } else {
-            // Create new project
-            result = StorageManager.addProject(projectData);
-        }
-        
-        if (result) {
-            this.closeProjectModal();
-        } else {
-            // Show error
-            if (window.NotificationManager) {
-                NotificationManager.error('Failed to save project');
+        try {
+            let result;
+            
+            if (projectId) {
+                // Update existing project
+                result = await StorageManager.updateProject(projectId, projectData);
             } else {
-                alert('Failed to save project');
+                // Create new project
+                result = await StorageManager.addProject(projectData);
+            }
+            
+            if (result) {
+                this.closeProjectModal();
+            } else {
+                // Show error
+                if (window.NotificationManager) {
+                    NotificationManager.error('Failed to save project');
+                } else {
+                    alert('Failed to save project');
+                }
+            }
+        } catch (error) {
+            console.error("Error saving project:", error);
+            if (window.NotificationManager) {
+                NotificationManager.error('Failed to save project: ' + error.message);
+            } else {
+                alert('Failed to save project: ' + error.message);
             }
         }
     }
@@ -538,30 +568,34 @@ class ProjectManager {
      * Confirm project deletion
      * @param {string} projectId - Project ID
      */
-    confirmDeleteProject(projectId) {
+    async confirmDeleteProject(projectId) {
         if (!projectId || !window.StorageManager) return;
         
-        const project = StorageManager.getProjectById(projectId);
-        if (!project) return;
-        
-        // Store project ID for deletion
-        this._deleteProjectId = projectId;
-        
-        // Update confirmation message
-        const deleteMessage = document.getElementById('deleteMessage');
-        if (deleteMessage) {
-            deleteMessage.innerHTML = `
-                Are you sure you want to delete the project <strong>${project.name}</strong>?
-                <p class="text-red-500 mt-2">
-                    This will also delete all tasks associated with this project. 
-                    This action cannot be undone.
-                </p>
-            `;
+        try {
+            const project = await StorageManager.getProjectById(projectId);
+            if (!project) return;
+            
+            // Store project ID for deletion
+            this._deleteProjectId = projectId;
+            
+            // Update confirmation message
+            const deleteMessage = document.getElementById('deleteMessage');
+            if (deleteMessage) {
+                deleteMessage.innerHTML = `
+                    Are you sure you want to delete the project <strong>${project.name}</strong>?
+                    <p class="text-red-500 mt-2">
+                        This will also delete all tasks associated with this project. 
+                        This action cannot be undone.
+                    </p>
+                `;
+            }
+            
+            // Show delete modal
+            const deleteModal = document.getElementById('deleteModal');
+            if (deleteModal) deleteModal.classList.add('active');
+        } catch (error) {
+            console.error("Error fetching project for deletion:", error);
         }
-        
-        // Show delete modal
-        const deleteModal = document.getElementById('deleteModal');
-        if (deleteModal) deleteModal.classList.add('active');
     }
 
     /**
@@ -576,20 +610,31 @@ class ProjectManager {
     /**
      * Delete the confirmed project
      */
-    deleteProject() {
+    async deleteProject() {
         if (!this._deleteProjectId || !window.StorageManager) {
             this.closeDeleteModal();
             return;
         }
         
-        // Delete the project
-        const success = StorageManager.deleteProject(this._deleteProjectId);
-        
-        // Close delete modal
-        this.closeDeleteModal();
-        
-        if (!success && window.NotificationManager) {
-            NotificationManager.error('Failed to delete project');
+        try {
+            // Delete the project
+            const success = await StorageManager.deleteProject(this._deleteProjectId);
+            
+            // Close delete modal
+            this.closeDeleteModal();
+            
+            if (!success && window.NotificationManager) {
+                NotificationManager.error('Failed to delete project');
+            }
+        } catch (error) {
+            console.error("Error deleting project:", error);
+            this.closeDeleteModal();
+            
+            if (window.NotificationManager) {
+                NotificationManager.error('Failed to delete project: ' + error.message);
+            } else {
+                alert('Failed to delete project: ' + error.message);
+            }
         }
     }
 }
