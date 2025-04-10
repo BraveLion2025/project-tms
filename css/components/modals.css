@@ -1,0 +1,228 @@
+/**
+ * Modal Component Styles for Project-TMS
+ */
+
+/* Modal container */
+.modal-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--transition-normal), visibility var(--transition-normal);
+}
+
+.modal-container.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Modal content */
+.modal-content {
+    background-color: var(--bg-primary);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-xl);
+    width: 100%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: translateY(20px);
+    transition: transform var(--transition-normal);
+    margin: 1rem;
+}
+
+.modal-container.active .modal-content {
+    transform: translateY(0);
+}
+
+.modal-large .modal-content {
+    max-width: 800px;
+}
+
+.modal-small .modal-content {
+    max-width: 400px;
+}
+
+/* Themed modal backgrounds */
+.theme-digital-void .modal-content,
+.theme-neo-synth .modal-content,
+.theme-aurora .modal-content {
+    background: var(--bg-secondary);
+    backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Modal header */
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.modal-close-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.25rem;
+    cursor: pointer;
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.modal-close-btn:hover {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+/* Modal body */
+.modal-body {
+    padding: 1.5rem;
+}
+
+/* Modal footer */
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-color);
+    background-color: var(--bg-secondary);
+}
+
+/* Task view modal specifics */
+.task-view-section {
+    margin-bottom: 1.5rem;
+}
+
+.task-view-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.task-view-content {
+    background-color: var(--bg-secondary);
+    padding: 0.75rem;
+    border-radius: var(--border-radius-md);
+    color: var(--text-primary);
+}
+
+.task-notes-container {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.task-note {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+    transition: background-color var(--transition-fast);
+}
+
+.task-note:last-child {
+    border-bottom: none;
+}
+
+.task-note:hover {
+    background-color: var(--bg-tertiary);
+}
+
+.task-note-date {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+}
+
+/* Add note form */
+.add-note-form {
+    display: flex;
+    margin-top: 1rem;
+}
+
+.add-note-input {
+    flex: 1;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    resize: vertical;
+    min-height: 3rem;
+}
+
+.add-note-btn {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+/* Task form styles */
+.form-row {
+    margin-bottom: 1.5rem;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+/* Time tracking info in task modal */
+.time-tracking-info {
+    background-color: var(--bg-secondary);
+    padding: 0.75rem;
+    border-radius: var(--border-radius-md);
+    margin-top: 0.5rem;
+}
+
+.time-active {
+    color: var(--success-color);
+    font-weight: 500;
+}
+
+/* Delete confirmation dialog */
+.delete-confirmation {
+    text-align: center;
+    padding: 1rem 0;
+}
+
+.delete-warning {
+    color: var(--danger-color);
+    font-weight: 500;
+    margin-top: 1rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+    .modal-content {
+        margin: 0.5rem;
+        max-height: calc(100vh - 1rem);
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .modal-header, 
+    .modal-body, 
+    .modal-footer {
+        padding: 1rem;
+    }
+}
