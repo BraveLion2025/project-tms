@@ -1,0 +1,267 @@
+/**
+ * Kanban Board Component Styles for Project-TMS
+ */
+
+/* Kanban Container */
+.kanban-container {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    padding: 0.5rem 0;
+    min-height: 70vh;
+    width: 100%;
+    scrollbar-width: thin;
+}
+
+/* Individual columns */
+.kanban-column {
+    min-width: var(--kanban-column-width);
+    flex: 1;
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius-lg);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border-color);
+}
+
+.theme-digital-void .kanban-column,
+.theme-neo-synth .kanban-column,
+.theme-aurora .kanban-column {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Column headers */
+.kanban-column-header {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: var(--bg-tertiary);
+}
+
+/* Status indicator colors */
+.kanban-column-header[data-status="todo"] .status-indicator {
+    background-color: var(--status-todo-color);
+}
+
+.kanban-column-header[data-status="in-progress"] .status-indicator {
+    background-color: var(--status-in-progress-color);
+}
+
+.kanban-column-header[data-status="review"] .status-indicator {
+    background-color: var(--status-review-color);
+}
+
+.kanban-column-header[data-status="done"] .status-indicator {
+    background-color: var(--status-done-color);
+}
+
+/* Status count badges */
+.status-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0 0.25rem;
+    color: white;
+}
+
+.todo-count {
+    background-color: var(--status-todo-color);
+}
+
+.in-progress-count {
+    background-color: var(--status-in-progress-color);
+}
+
+.review-count {
+    background-color: var(--status-review-color);
+}
+
+.done-count {
+    background-color: var(--status-done-color);
+}
+
+/* Column content */
+.kanban-column-content {
+    padding: 1rem;
+    flex-grow: 1;
+    overflow-y: auto;
+    height: calc(70vh - 60px); /* Account for header height */
+}
+
+/* Task cards */
+.task-card {
+    position: relative;
+    padding: 1rem;
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius-md);
+    margin-bottom: 0.75rem;
+    cursor: pointer;
+    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+}
+
+.task-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+/* Status indicators on cards */
+.task-card.status-todo {
+    border-left: 4px solid var(--status-todo-color);
+}
+
+.task-card.status-in-progress {
+    border-left: 4px solid var(--status-in-progress-color);
+}
+
+.task-card.status-review {
+    border-left: 4px solid var(--status-review-color);
+}
+
+.task-card.status-done {
+    border-left: 4px solid var(--status-done-color);
+}
+
+/* Priority indicators */
+.priority-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--border-radius-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-align: center;
+}
+
+.priority-high {
+    background-color: var(--priority-high-color);
+    color: white;
+}
+
+.priority-medium {
+    background-color: var(--priority-medium-color);
+    color: white;
+}
+
+.priority-low {
+    background-color: var(--priority-low-color);
+    color: white;
+}
+
+/* Due date styling */
+.due-date {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.due-soon {
+    color: var(--warning-color);
+}
+
+.overdue {
+    color: var(--danger-color);
+}
+
+/* Task title and description */
+.task-title {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.task-description {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.75rem;
+}
+
+/* Time tracking */
+.time-tracker-btn {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--border-radius-sm);
+    transition: background-color 0.2s;
+}
+
+.time-spent {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+}
+
+/* Dragging state */
+.task-card.dragging {
+    opacity: 0.5;
+    border-style: dashed;
+    border-color: var(--accent-primary);
+    box-shadow: none;
+}
+
+/* Drag hover zone */
+.kanban-column-content.drag-hover {
+    background-color: var(--bg-tertiary);
+    opacity: 0.9;
+}
+
+/* Empty column state */
+.empty-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 2rem;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.empty-column-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    opacity: 0.5;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+    .kanban-container {
+        padding-bottom: 1rem;
+    }
+    
+    .kanban-column {
+        min-width: 280px;
+    }
+}
+
+@media (max-width: 768px) {
+    .kanban-container {
+        flex-direction: column;
+        overflow-x: visible;
+    }
+    
+    .kanban-column {
+        width: 100%;
+        min-width: 100%;
+        margin-bottom: 1rem;
+        min-height: auto;
+        max-height: 500px;
+    }
+    
+    .kanban-column-content {
+        height: auto;
+        max-height: 400px;
+    }
+}
